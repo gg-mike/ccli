@@ -1,0 +1,10 @@
+address: ""   # listen HTTP server address
+db:
+  url: ""     # connection url for postgres database
+vault:
+  url: ""     # connection url for vault
+  token: ""   # root token
+log:
+  level: ""   # log filtering level
+  dir: ""     # log store location
+scheduler: "" # scheduler type
