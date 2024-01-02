@@ -1,5 +1,6 @@
 APP=ccli
 CMD=serve
+# CMD=migrate
 
 .PHONY: build
 build: fmt
@@ -11,7 +12,7 @@ run: build
 
 .PHONY: docs
 docs:
-	swag init -o ./docs -d pkg -pd
+	swag init -o ./docs -pd
 
 .PHONY: clean
 clean:

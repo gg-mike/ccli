@@ -5,11 +5,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
-func Gin() gin.HandlerFunc {
-	return ginStructuredLogger(&log.Logger)
+func Gin(logger Logger) gin.HandlerFunc {
+	return ginStructuredLogger(&logger.impl)
 }
 
 func ginStructuredLogger(logger *zerolog.Logger) gin.HandlerFunc {

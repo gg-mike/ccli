@@ -1,0 +1,1938 @@
+definitions:
+  model.Build:
+    properties:
+      created_at:
+        type: string
+      number:
+        type: integer
+      status:
+        $ref: '#/definitions/model.BuildStatus'
+      steps:
+        items:
+          $ref: '#/definitions/model.BuildStep'
+        type: array
+      updated_at:
+        type: string
+      worker_name:
+        $ref: '#/definitions/sql.NullString'
+    type: object
+  model.BuildLog:
+    properties:
+      command:
+        type: string
+      idx:
+        type: integer
+      output:
+        type: string
+      total:
+        type: integer
+    type: object
+  model.BuildShort:
+    properties:
+      created_at:
+        type: string
+      number:
+        type: integer
+      status:
+        $ref: '#/definitions/model.BuildStatus'
+      updated_at:
+        type: string
+      worker_name:
+        $ref: '#/definitions/sql.NullString'
+    type: object
+  model.BuildStatus:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    type: integer
+    x-enum-varnames:
+    - BuildScheduled
+    - BuildRunning
+    - BuildSuccessful
+    - BuildFailed
+    - BuildCanceled
+  model.BuildStep:
+    properties:
+      created_at:
+        type: string
+      duration:
+        $ref: '#/definitions/time.Duration'
+      logs:
+        items:
+          $ref: '#/definitions/model.BuildLog'
+        type: array
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.Pipeline:
+    properties:
+      branch:
+        type: string
+      builds:
+        items:
+          $ref: '#/definitions/model.Build'
+        type: array
+      config:
+        $ref: '#/definitions/model.PipelineConfig'
+      created_at:
+        type: string
+      name:
+        type: string
+      secrets:
+        items:
+          $ref: '#/definitions/model.Secret'
+        type: array
+      updated_at:
+        type: string
+      variables:
+        items:
+          $ref: '#/definitions/model.Variable'
+        type: array
+    type: object
+  model.PipelineConfig:
+    properties:
+      cleanup:
+        items:
+          type: string
+        type: array
+      image:
+        type: string
+      steps:
+        items:
+          $ref: '#/definitions/model.PipelineConfigStep'
+        type: array
+      system:
+        type: string
+    type: object
+  model.PipelineConfigStep:
+    properties:
+      commands:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+    type: object
+  model.PipelineInput:
+    properties:
+      branch:
+        type: string
+      config:
+        $ref: '#/definitions/model.PipelineConfig'
+      name:
+        type: string
+    type: object
+  model.PipelineShort:
+    properties:
+      branch:
+        type: string
+      created_at:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.Project:
+    properties:
+      created_at:
+        type: string
+      name:
+        type: string
+      pipelines:
+        items:
+          $ref: '#/definitions/model.Pipeline'
+        type: array
+      repo:
+        type: string
+      secrets:
+        items:
+          $ref: '#/definitions/model.Secret'
+        type: array
+      updated_at:
+        type: string
+      variables:
+        items:
+          $ref: '#/definitions/model.Variable'
+        type: array
+    type: object
+  model.ProjectInput:
+    properties:
+      name:
+        type: string
+      repo:
+        type: string
+    type: object
+  model.ProjectShort:
+    properties:
+      created_at:
+        type: string
+      name:
+        type: string
+      repo:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.Secret:
+    properties:
+      created_at:
+        type: string
+      key:
+        type: string
+      path:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.SecretInput:
+    properties:
+      key:
+        type: string
+      path:
+        type: string
+      value:
+        type: string
+    type: object
+  model.Variable:
+    properties:
+      created_at:
+        type: string
+      key:
+        type: string
+      path:
+        type: string
+      updated_at:
+        type: string
+      value:
+        type: string
+    type: object
+  model.VariableInput:
+    properties:
+      key:
+        type: string
+      path:
+        type: string
+      value:
+        type: string
+    type: object
+  model.Worker:
+    properties:
+      active_builds:
+        type: integer
+      address:
+        type: string
+      builds:
+        items:
+          $ref: '#/definitions/model.Build'
+        type: array
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/model.WorkerStatus'
+      strategy:
+        type: integer
+      system:
+        type: string
+      type:
+        $ref: '#/definitions/model.WorkerType'
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  model.WorkerInput:
+    properties:
+      address:
+        type: string
+      capacity:
+        type: integer
+      name:
+        type: string
+      private_key:
+        type: string
+      strategy:
+        type: integer
+      system:
+        type: string
+      type:
+        $ref: '#/definitions/model.WorkerType'
+      username:
+        type: string
+    type: object
+  model.WorkerShort:
+    properties:
+      active_builds:
+        type: integer
+      address:
+        type: string
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/model.WorkerStatus'
+      strategy:
+        type: integer
+      system:
+        type: string
+      type:
+        $ref: '#/definitions/model.WorkerType'
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  model.WorkerStatus:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - WorkerIdle
+    - WorkerUsed
+    - WorkerUnreachable
+  model.WorkerType:
+    enum:
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - WorkerStatic
+    - WorkerDockerHost
+  sql.NullString:
+    properties:
+      string:
+        type: string
+      valid:
+        description: Valid is true if String is not NULL
+        type: boolean
+    type: object
+  time.Duration:
+    enum:
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    type: integer
+    x-enum-varnames:
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+info:
+  contact: {}
+paths:
+  /-/healthy:
+    get:
+      operationId: healthy
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "503":
+          description: Service Unavailable
+          schema:
+            type: string
+      summary: Check liveness
+      tags:
+      - probes
+  /-/ready:
+    get:
+      operationId: ready
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "503":
+          description: Service Unavailable
+          schema:
+            type: string
+      summary: Check readiness
+      tags:
+      - probes
+  /projects:
+    get:
+      operationId: many-projects
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      - description: Project name (pattern)
+        in: query
+        name: name
+        type: string
+      - description: Project repo (pattern)
+        in: query
+        name: repo
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of projects
+          schema:
+            items:
+              $ref: '#/definitions/model.ProjectShort'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get projects
+      tags:
+      - projects
+    post:
+      consumes:
+      - application/json
+      operationId: create-project
+      parameters:
+      - description: New project entry
+        in: body
+        name: project
+        required: true
+        schema:
+          $ref: '#/definitions/model.ProjectInput'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create new project
+      tags:
+      - projects
+  /projects/{project_name}:
+    delete:
+      operationId: delete-project
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Force deletion
+        in: query
+        name: force
+        type: boolean
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete project
+      tags:
+      - projects
+    get:
+      operationId: single-project
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Requested project
+          schema:
+            $ref: '#/definitions/model.Project'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get the single project
+      tags:
+      - projects
+    put:
+      consumes:
+      - application/json
+      operationId: update-project
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Updated project entry
+        in: body
+        name: project
+        required: true
+        schema:
+          $ref: '#/definitions/model.ProjectInput'
+      responses:
+        "200":
+          description: Updated project
+          schema:
+            $ref: '#/definitions/model.Project'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update project
+      tags:
+      - projects
+  /projects/{project_name}/pipelines:
+    get:
+      operationId: many-pipelines
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      - description: Pipeline name (pattern)
+        in: query
+        name: name
+        type: string
+      - description: Pipeline branch (pattern)
+        in: query
+        name: branch
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of pipelines
+          schema:
+            items:
+              $ref: '#/definitions/model.PipelineShort'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get pipelines
+      tags:
+      - pipelines
+    post:
+      consumes:
+      - application/json
+      operationId: create-pipeline
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: New pipeline entry
+        in: body
+        name: pipeline
+        required: true
+        schema:
+          $ref: '#/definitions/model.PipelineInput'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create new pipeline
+      tags:
+      - pipelines
+  /projects/{project_name}/pipelines/{pipeline_name}:
+    delete:
+      operationId: delete-pipeline
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Force deletion
+        in: query
+        name: force
+        type: boolean
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete pipeline
+      tags:
+      - pipelines
+    get:
+      operationId: single-pipeline
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Requested pipeline
+          schema:
+            $ref: '#/definitions/model.Pipeline'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get the single pipeline
+      tags:
+      - pipelines
+    put:
+      consumes:
+      - application/json
+      operationId: update-pipeline
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Updated pipeline entry
+        in: body
+        name: pipeline
+        required: true
+        schema:
+          $ref: '#/definitions/model.PipelineInput'
+      responses:
+        "200":
+          description: Updated pipeline
+          schema:
+            $ref: '#/definitions/model.Pipeline'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update pipeline
+      tags:
+      - pipelines
+  /projects/{project_name}/pipelines/{pipeline_name}/builds:
+    get:
+      operationId: many-builds
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      - collectionFormat: csv
+        description: Build status (possible values)
+        in: query
+        items:
+          type: integer
+        name: status
+        type: array
+      - description: Build worker name (exact)
+        in: query
+        name: worker_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of builds
+          schema:
+            items:
+              $ref: '#/definitions/model.BuildShort'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get builds
+      tags:
+      - builds
+    post:
+      consumes:
+      - application/json
+      operationId: create-build
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Schedule build
+      tags:
+      - builds
+  /projects/{project_name}/pipelines/{pipeline_name}/builds/{build_number}:
+    get:
+      operationId: single-build
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Build number
+        in: path
+        name: build_number
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Requested build
+          schema:
+            $ref: '#/definitions/model.Build'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get the single build
+      tags:
+      - builds
+    put:
+      consumes:
+      - application/json
+      operationId: update-build
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Build number
+        in: path
+        name: build_number
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: Updated build
+          schema:
+            $ref: '#/definitions/model.Build'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Cancel build
+      tags:
+      - builds
+  /projects/{project_name}/pipelines/{pipeline_name}/secrets:
+    get:
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      - description: Secret key (pattern)
+        in: query
+        name: key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of secrets
+          schema:
+            items:
+              $ref: '#/definitions/model.Secret'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get secrets
+      tags:
+      - secrets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: New secret entry
+        in: body
+        name: secret
+        required: true
+        schema:
+          $ref: '#/definitions/model.SecretInput'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create new secret
+      tags:
+      - secrets
+  /projects/{project_name}/pipelines/{pipeline_name}/secrets/{secret_key}:
+    delete:
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Secret key
+        in: path
+        name: secret_key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete secret
+      tags:
+      - secrets
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Secret key
+        in: path
+        name: secret_key
+        required: true
+        type: string
+      - description: Updated secret entry
+        in: body
+        name: secret
+        required: true
+        schema:
+          $ref: '#/definitions/model.SecretInput'
+      responses:
+        "200":
+          description: Updated secret
+          schema:
+            $ref: '#/definitions/model.Secret'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update secret
+      tags:
+      - secrets
+  /projects/{project_name}/pipelines/{pipeline_name}/variables:
+    get:
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      - description: Variable key (pattern)
+        in: query
+        name: key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of variables
+          schema:
+            items:
+              $ref: '#/definitions/model.Variable'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get variables
+      tags:
+      - variables
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: New variable entry
+        in: body
+        name: variable
+        required: true
+        schema:
+          $ref: '#/definitions/model.VariableInput'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create new variable
+      tags:
+      - variables
+  /projects/{project_name}/pipelines/{pipeline_name}/variables/{variable_key}:
+    delete:
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Variable key
+        in: path
+        name: variable_key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete variable
+      tags:
+      - variables
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Variable key
+        in: path
+        name: variable_key
+        required: true
+        type: string
+      - description: Updated variable entry
+        in: body
+        name: variable
+        required: true
+        schema:
+          $ref: '#/definitions/model.VariableInput'
+      responses:
+        "200":
+          description: Updated variable
+          schema:
+            $ref: '#/definitions/model.Variable'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update variable
+      tags:
+      - variables
+  /projects/{project_name}/secrets:
+    get:
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      - description: Secret key (pattern)
+        in: query
+        name: key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of secrets
+          schema:
+            items:
+              $ref: '#/definitions/model.Secret'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get secrets
+      tags:
+      - secrets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: New secret entry
+        in: body
+        name: secret
+        required: true
+        schema:
+          $ref: '#/definitions/model.SecretInput'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create new secret
+      tags:
+      - secrets
+  /projects/{project_name}/secrets/{secret_key}:
+    delete:
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Secret key
+        in: path
+        name: secret_key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete secret
+      tags:
+      - secrets
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Secret key
+        in: path
+        name: secret_key
+        required: true
+        type: string
+      - description: Updated secret entry
+        in: body
+        name: secret
+        required: true
+        schema:
+          $ref: '#/definitions/model.SecretInput'
+      responses:
+        "200":
+          description: Updated secret
+          schema:
+            $ref: '#/definitions/model.Secret'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update secret
+      tags:
+      - secrets
+  /projects/{project_name}/variables:
+    get:
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      - description: Variable key (pattern)
+        in: query
+        name: key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of variables
+          schema:
+            items:
+              $ref: '#/definitions/model.Variable'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get variables
+      tags:
+      - variables
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: New variable entry
+        in: body
+        name: variable
+        required: true
+        schema:
+          $ref: '#/definitions/model.VariableInput'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create new variable
+      tags:
+      - variables
+  /projects/{project_name}/variables/{variable_key}:
+    delete:
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Variable key
+        in: path
+        name: variable_key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete variable
+      tags:
+      - variables
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Variable key
+        in: path
+        name: variable_key
+        required: true
+        type: string
+      - description: Updated variable entry
+        in: body
+        name: variable
+        required: true
+        schema:
+          $ref: '#/definitions/model.VariableInput'
+      responses:
+        "200":
+          description: Updated variable
+          schema:
+            $ref: '#/definitions/model.Variable'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update variable
+      tags:
+      - variables
+  /secrets:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      - description: Secret key (pattern)
+        in: query
+        name: key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of secrets
+          schema:
+            items:
+              $ref: '#/definitions/model.Secret'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get secrets
+      tags:
+      - secrets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: New secret entry
+        in: body
+        name: secret
+        required: true
+        schema:
+          $ref: '#/definitions/model.SecretInput'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create new secret
+      tags:
+      - secrets
+  /secrets/{secret_key}:
+    delete:
+      parameters:
+      - description: Secret key
+        in: path
+        name: secret_key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete secret
+      tags:
+      - secrets
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Secret key
+        in: path
+        name: secret_key
+        required: true
+        type: string
+      - description: Updated secret entry
+        in: body
+        name: secret
+        required: true
+        schema:
+          $ref: '#/definitions/model.SecretInput'
+      responses:
+        "200":
+          description: Updated secret
+          schema:
+            $ref: '#/definitions/model.Secret'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update secret
+      tags:
+      - secrets
+  /variables:
+    get:
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      - description: Variable key (pattern)
+        in: query
+        name: key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of variables
+          schema:
+            items:
+              $ref: '#/definitions/model.Variable'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get variables
+      tags:
+      - variables
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: New variable entry
+        in: body
+        name: variable
+        required: true
+        schema:
+          $ref: '#/definitions/model.VariableInput'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create new variable
+      tags:
+      - variables
+  /variables/{variable_key}:
+    delete:
+      parameters:
+      - description: Variable key
+        in: path
+        name: variable_key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete variable
+      tags:
+      - variables
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Variable key
+        in: path
+        name: variable_key
+        required: true
+        type: string
+      - description: Updated variable entry
+        in: body
+        name: variable
+        required: true
+        schema:
+          $ref: '#/definitions/model.VariableInput'
+      responses:
+        "200":
+          description: Updated variable
+          schema:
+            $ref: '#/definitions/model.Variable'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update variable
+      tags:
+      - variables
+  /workers:
+    get:
+      operationId: many-workers
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      - description: Worker name (pattern)
+        in: query
+        name: name
+        type: string
+      - description: Worker system (pattern)
+        in: query
+        name: system
+        type: string
+      - collectionFormat: csv
+        description: Worker status (possible values)
+        in: query
+        items:
+          type: integer
+        name: status
+        type: array
+      - collectionFormat: csv
+        description: Worker type (possible values)
+        in: query
+        items:
+          type: integer
+        name: type
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of workers
+          schema:
+            items:
+              $ref: '#/definitions/model.WorkerShort'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get workers
+      tags:
+      - workers
+    post:
+      consumes:
+      - application/json
+      operationId: create-worker
+      parameters:
+      - description: New worker entry
+        in: body
+        name: worker
+        required: true
+        schema:
+          $ref: '#/definitions/model.WorkerInput'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create new worker
+      tags:
+      - workers
+  /workers/{worker_name}:
+    delete:
+      operationId: delete-worker
+      parameters:
+      - description: Worker name
+        in: path
+        name: worker_name
+        required: true
+        type: string
+      - description: Force deletion
+        in: query
+        name: force
+        type: boolean
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete worker
+      tags:
+      - workers
+    get:
+      operationId: single-worker
+      parameters:
+      - description: Worker name
+        in: path
+        name: worker_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Requested worker
+          schema:
+            $ref: '#/definitions/model.Worker'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get the single worker
+      tags:
+      - workers
+    put:
+      consumes:
+      - application/json
+      operationId: update-worker
+      parameters:
+      - description: Worker name
+        in: path
+        name: worker_name
+        required: true
+        type: string
+      - description: Updated worker entry
+        in: body
+        name: worker
+        required: true
+        schema:
+          $ref: '#/definitions/model.WorkerInput'
+      responses:
+        "200":
+          description: Updated worker
+          schema:
+            $ref: '#/definitions/model.Worker'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update worker
+      tags:
+      - workers
+swagger: "2.0"

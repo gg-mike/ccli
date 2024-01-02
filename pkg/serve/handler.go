@@ -7,10 +7,15 @@ import (
 	"syscall"
 	"time"
 
+	docs "github.com/gg-mike/ccli/docs"
+	"github.com/gg-mike/ccli/pkg/api/handler"
+	"github.com/gg-mike/ccli/pkg/api/router"
 	"github.com/gg-mike/ccli/pkg/db"
 	"github.com/gg-mike/ccli/pkg/log"
 	"github.com/gg-mike/ccli/pkg/vault"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Flags struct {
@@ -25,13 +30,18 @@ type Handler struct {
 	flags  *Flags
 	logger log.Logger
 	srv    *http.Server
+	state  *handler.State
 }
 
 func NewHandler(logger log.Logger, f *Flags) *Handler {
 	h := &Handler{
 		flags:  f,
 		logger: logger,
+		state:  handler.NewState(),
 	}
+
+	h.state.Healthy()
+	h.state.NotReady()
 
 	h.initServer()
 	h.initDb()
@@ -47,6 +57,11 @@ func (h *Handler) Run() {
 			h.logger.Fatal().Err(err).Msg("server start ended with error")
 		}
 	}()
+
+	h.state.Ready()
+
+	h.logger.Info().
+		Msgf("API documentation available at http://%s/api/docs/index.html", h.flags.Address)
 }
 
 func (h *Handler) Shutdown() {
@@ -60,6 +75,8 @@ func (h *Handler) Shutdown() {
 
 	h.logger.Info().Msg("shutting down gracefully, press Ctrl+C again to force")
 
+	h.state.NotReady()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := h.srv.Shutdown(ctx); err != nil {
@@ -71,12 +88,27 @@ func (h *Handler) Shutdown() {
 
 func (h *Handler) initServer() {
 	gin.SetMode(gin.ReleaseMode)
-	router := gin.New()
-	router.Use(log.Gin())
-	router.Use(gin.Recovery())
+	r := gin.New()
+	r.Use(log.Gin(h.logger))
+	r.Use(gin.Recovery())
+
+	rg := r.Group("/api")
+	router.InitProbeRouter(rg, h.state)
+	router.InitWorkerRouter(rg)
+	projectRg := router.InitProjectRouter(rg)
+	pipelineRg := router.InitPipelineRouter(projectRg)
+	router.InitBuildRouter(pipelineRg)
+	router.InitSecretRouter(rg, projectRg, pipelineRg)
+	router.InitVariableRouter(rg, projectRg, pipelineRg)
+
+	docs.SwaggerInfo.Title = "ccli - CI/CD CLI Application"
+	docs.SwaggerInfo.BasePath = "/api"
+	docs.SwaggerInfo.Description = "HTTP server for ccli developed using Go (Gin, Gorm)."
+	rg.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	h.srv = &http.Server{
 		Addr:    h.flags.Address,
-		Handler: router,
+		Handler: r,
 	}
 }
 

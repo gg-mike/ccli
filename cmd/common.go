@@ -11,7 +11,7 @@ import (
 func validateScheduler(cmd *cobra.Command) error {
 	scheduler := viper.GetString(SCHEDULER)
 	if !slices.Contains([]string{"standalone", "k8s"}, scheduler) {
-		logger.Error().Msgf(`flag "scheduler" has invalid value [%s]`, scheduler)
+		logger.Error().Msgf("flag 'scheduler' has invalid value [%s]", scheduler)
 		cmd.Help()
 		return errors.New("invalid")
 	}

@@ -32,15 +32,15 @@ func (logger *GormLogger) LogMode(gormLogger.LogLevel) gormLogger.Interface {
 }
 
 func (logger *GormLogger) Info(ctx context.Context, s string, args ...interface{}) {
-	logger.Logger.Info().Str("module", "gorm").Caller(2).Msgf(s, args...)
+	logger.Logger.Info().Str("module", "gorm").Msgf(s, args...)
 }
 
 func (logger *GormLogger) Warn(ctx context.Context, s string, args ...interface{}) {
-	logger.Logger.Warn().Str("module", "gorm").Caller(2).Msgf(s, args...)
+	logger.Logger.Warn().Str("module", "gorm").Msgf(s, args...)
 }
 
 func (logger *GormLogger) Error(ctx context.Context, s string, args ...interface{}) {
-	logger.Logger.Error().Str("module", "gorm").Caller(2).Msgf(s, args...)
+	logger.Logger.Error().Str("module", "gorm").Msgf(s, args...)
 }
 
 func (logger *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
@@ -54,14 +54,14 @@ func (logger *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() 
 		fields[logger.SourceField] = utils.FileWithLineNum()
 	}
 	if err != nil && !(errors.Is(err, gorm.ErrRecordNotFound) && logger.SkipErrRecordNotFound) {
-		logger.Logger.Error().Str("module", "gorm").Caller(2).Err(err).Fields(fields).Msg("query error")
+		logger.Logger.Error().Str("module", "gorm").Err(err).Fields(fields).Msg("query error")
 		return
 	}
 
 	if logger.SlowThreshold != 0 && elapsed > logger.SlowThreshold {
-		logger.Logger.Warn().Str("module", "gorm").Caller(2).Fields(fields).Msg("slow query")
+		logger.Logger.Warn().Str("module", "gorm").Fields(fields).Msg("slow query")
 		return
 	}
 
-	logger.Logger.Debug().Str("module", "gorm").Caller(2).Fields(fields).Msg("query")
+	logger.Logger.Debug().Str("module", "gorm").Fields(fields).Msg("query")
 }

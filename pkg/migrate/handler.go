@@ -3,6 +3,7 @@ package migrate
 import (
 	"github.com/gg-mike/ccli/pkg/db"
 	"github.com/gg-mike/ccli/pkg/log"
+	"github.com/gg-mike/ccli/pkg/model"
 )
 
 type Flags struct {
@@ -28,9 +29,24 @@ func NewHandler(logger log.Logger, f *Flags) *Handler {
 
 func (h *Handler) Run() error {
 	if h.flags.Scheduler == "standalone" {
-		return db.Get().AutoMigrate()
+		return db.Get().AutoMigrate(
+			&model.Worker{},
+			&model.Project{},
+			&model.Pipeline{},
+			&model.Build{},
+			&model.BuildStep{},
+			&model.Secret{},
+			&model.Variable{},
+		)
 	} else {
-		return db.Get().AutoMigrate()
+		return db.Get().AutoMigrate(
+			&model.Project{},
+			&model.Pipeline{},
+			&model.Build{},
+			&model.BuildStep{},
+			&model.Secret{},
+			&model.Variable{},
+		)
 	}
 }
 
