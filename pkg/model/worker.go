@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gg-mike/ccli/pkg/scheduler"
 	"github.com/gg-mike/ccli/pkg/ssh"
 	"github.com/gg-mike/ccli/pkg/vault"
 	"gorm.io/gorm"
@@ -90,6 +91,7 @@ func (m *Worker) AfterCreate(tx *gorm.DB) error {
 }
 
 func (m *Worker) AfterSave(tx *gorm.DB) error {
+	go scheduler.Get().ChangeInWorkers()
 	return nil
 }
 
@@ -154,6 +156,10 @@ func getPK(tx *gorm.DB) (string, bool) {
 		return "", false
 	}
 	return input.(WorkerInput).PrivateKey, ok
+}
+
+func (m Worker) PK() (string, error) {
+	return vault.GetStr(m.Name)
 }
 
 func (m Worker) Merge(input WorkerInput) Worker {

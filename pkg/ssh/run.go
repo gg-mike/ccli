@@ -8,25 +8,7 @@ import (
 	"strings"
 )
 
-func (ctx *Context) Run(commands []string) {
-	running := true
-
-	go ctx.run(commands)
-
-	for running {
-		select {
-		case cmd := <-ctx.cmdChan:
-			ctx.OnCmd(cmd)
-		case out := <-ctx.outChan:
-			ctx.OnOut(out)
-		case err := <-ctx.errChan:
-			ctx.OnErr(err)
-			running = false
-		}
-	}
-}
-
-func (ctx *Context) run(commands []string) {
+func (ctx *Context[T]) Run(commands []string) {
 	OUT_CMD_TERM := "Ua&&Bi9G*TjbPF62oGa4"
 	ERR_CMD_TERM := "!N3o#F4SPZ&UDxybohUT"
 
@@ -53,23 +35,23 @@ func (ctx *Context) run(commands []string) {
 		}
 	}()
 
-	go scan(outReader, ctx.outChan)
+	go scan(outReader, ctx.OutChan)
 
 	// Read welcome message
 	if err := runCommand("echo", in, inStatus, outReader); err != nil {
 		// Error during connection like 'mesg: ttyname failed: Inappropriate ioctl for device'
 		if err.Error() != "command ended with error" {
-			ctx.errChan <- err
+			ctx.ErrChan <- err
 		}
 	}
 
 	for i, command := range commands {
-		ctx.cmdChan <- ctx.ParseCmd(command, i, total)
+		ctx.CmdChan <- ctx.ParseCmd(command, i, total)
 		if err := runCommand(command, in, inStatus, outReader); err != nil {
-			ctx.errChan <- err
+			ctx.ErrChan <- err
 		}
 	}
-	ctx.errChan <- nil
+	ctx.ErrChan <- nil
 }
 
 type SyncReader struct {

@@ -37,6 +37,7 @@ func (h *Handler) Run() error {
 			&model.BuildStep{},
 			&model.Secret{},
 			&model.Variable{},
+			&model.QueueElem{},
 		)
 	} else {
 		return db.Get().AutoMigrate(
@@ -46,6 +47,7 @@ func (h *Handler) Run() error {
 			&model.BuildStep{},
 			&model.Secret{},
 			&model.Variable{},
+			&model.QueueElem{},
 		)
 	}
 }

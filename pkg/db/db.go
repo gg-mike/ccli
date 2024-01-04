@@ -16,6 +16,10 @@ func Get() *gorm.DB {
 }
 
 func Init(url string, logger logger.Interface) error {
+	if db != nil {
+		panic("database is already initialized")
+	}
+
 	var err error
 	db, err = gorm.Open(postgres.Open(url), &gorm.Config{Logger: logger})
 	return err

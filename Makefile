@@ -10,6 +10,10 @@ build: fmt
 run: build
 	./bin/${APP} ${CMD}
 
+.PHONY: migrate
+migrate: build
+	./bin/${APP} migrate
+
 .PHONY: docs
 docs:
 	swag init -o ./docs -pd

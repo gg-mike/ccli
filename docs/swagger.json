@@ -1766,6 +1766,172 @@
                 }
             }
         },
+        "/queue": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "queue"
+                ],
+                "summary": "Get queue",
+                "operationId": "queue",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by field",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Queue",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.QueueElemShort"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/queue/{project_name}/{pipeline_name}/{build_number}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "queue"
+                ],
+                "summary": "Get the single queue elem",
+                "operationId": "single-queue-elem",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project name",
+                        "name": "project_name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pipeline name",
+                        "name": "pipeline_name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Build number",
+                        "name": "build_number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Requested queue elem",
+                        "schema": {
+                            "$ref": "#/definitions/model.QueueElem"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "queue"
+                ],
+                "summary": "Delete queue elem",
+                "operationId": "delete-queue-elem",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project name",
+                        "name": "project_name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pipeline name",
+                        "name": "pipeline_name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Build number",
+                        "name": "build_number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/secrets": {
             "get": {
                 "produces": [
@@ -2517,6 +2683,9 @@
                 "name": {
                     "type": "string"
                 },
+                "start": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -2687,6 +2856,60 @@
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.QueueContext": {
+            "type": "object",
+            "properties": {
+                "build": {
+                    "$ref": "#/definitions/model.Build"
+                },
+                "globalSecrets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Secret"
+                    }
+                },
+                "globalVariables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Variable"
+                    }
+                },
+                "pipeline": {
+                    "$ref": "#/definitions/model.Pipeline"
+                },
+                "project": {
+                    "$ref": "#/definitions/model.Project"
+                },
+                "worker": {
+                    "$ref": "#/definitions/model.Worker"
+                }
+            }
+        },
+        "model.QueueElem": {
+            "type": "object",
+            "properties": {
+                "context": {
+                    "$ref": "#/definitions/model.QueueContext"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.QueueElemShort": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 }
             }

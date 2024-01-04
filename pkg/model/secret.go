@@ -54,6 +54,10 @@ func (m *Secret) AfterDelete(tx *gorm.DB) error {
 	return vault.Del(m.getUnique())
 }
 
+func (m Secret) Value() (string, error) {
+	return vault.GetStr(m.getUnique())
+}
+
 func (m *Secret) getUnique() string {
 	unique := ""
 	if m.ProjectName.Valid {

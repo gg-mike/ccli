@@ -18,6 +18,10 @@ func Get() *vault.Client {
 }
 
 func Init(address, token string) error {
+	if client != nil {
+		panic("vault client is already initialized")
+	}
+
 	var err error
 	client, err = vault.New(
 		vault.WithAddress(address),
@@ -53,28 +57,6 @@ func GetStr(key string) (string, error) {
 		return "", err
 	}
 	return secret.Data.Data["value"].(string), nil
-}
-
-func SetMap(key string, data map[string]any) error {
-	_, err := Get().Secrets.KvV2Write(
-		context.Background(),
-		key,
-		schema.KvV2WriteRequest{Data: data},
-		vault.WithMountPath("secret"),
-	)
-	return err
-}
-
-func GetMap(key string) (map[string]any, error) {
-	secret, err := Get().Secrets.KvV2Read(
-		context.Background(),
-		key,
-		vault.WithMountPath("secret"),
-	)
-	if err != nil {
-		return map[string]any{}, err
-	}
-	return secret.Data.Data, nil
 }
 
 func Del(key string) error {

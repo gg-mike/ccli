@@ -4,8 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/gg-mike/ccli/pkg/scheduler"
 	"gorm.io/gorm"
 )
 
@@ -69,7 +72,7 @@ func (m *Build) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (m *Build) AfterCreate(tx *gorm.DB) error {
-	// TODO: schedule build
+	go scheduler.Get().Schedule(m.ID())
 	return nil
 }
 
@@ -81,10 +84,40 @@ func (m *Build) BeforeUpdate(tx *gorm.DB) error {
 	switch prev.(Build).Status {
 	case BuildScheduled, BuildRunning:
 		tx.Statement.SetColumn("status", BuildCanceled)
-		// TODO: cancel build
+		go scheduler.Get().Finished(m.ID())
 		return nil
 	default:
 		return fmt.Errorf("cannot change status of build from [%s] to [%s]",
 			prev.(Build).Status.String(), BuildCanceled.String())
 	}
+}
+
+func (m Build) ID() string {
+	return fmt.Sprintf("%s/%s/%d",
+		m.ProjectName,
+		m.PipelineName,
+		m.Number,
+	)
+}
+
+func BuildFromID(buildID string) Build {
+	parts := strings.Split(buildID, "/")
+	m := Build{}
+	m.ProjectName = parts[0]
+	m.PipelineName = parts[1]
+	num, _ := strconv.Atoi(parts[2])
+	m.Number = uint(num)
+	return m
+}
+
+func (m *Build) AppendLog(log BuildLog) {
+	m.Steps[len(m.Steps)-1].AppendLog(log)
+}
+
+func (m *Build) AppendOutput(output string) {
+	m.Steps[len(m.Steps)-1].AppendOutput(output)
+}
+
+func (m *Build) End() {
+	m.Steps[len(m.Steps)-1].End()
 }

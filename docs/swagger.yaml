@@ -66,6 +66,8 @@ definitions:
         type: array
       name:
         type: string
+      start:
+        type: string
       updated_at:
         type: string
     type: object
@@ -177,6 +179,41 @@ definitions:
       repo:
         type: string
       updated_at:
+        type: string
+    type: object
+  model.QueueContext:
+    properties:
+      build:
+        $ref: '#/definitions/model.Build'
+      globalSecrets:
+        items:
+          $ref: '#/definitions/model.Secret'
+        type: array
+      globalVariables:
+        items:
+          $ref: '#/definitions/model.Variable'
+        type: array
+      pipeline:
+        $ref: '#/definitions/model.Pipeline'
+      project:
+        $ref: '#/definitions/model.Project'
+      worker:
+        $ref: '#/definitions/model.Worker'
+    type: object
+  model.QueueElem:
+    properties:
+      context:
+        $ref: '#/definitions/model.QueueContext'
+      created_at:
+        type: string
+      id:
+        type: string
+    type: object
+  model.QueueElemShort:
+    properties:
+      created_at:
+        type: string
+      id:
         type: string
     type: object
   model.Secret:
@@ -1507,6 +1544,117 @@ paths:
       summary: Update variable
       tags:
       - variables
+  /queue:
+    get:
+      operationId: queue
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      - description: Order by field
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Queue
+          schema:
+            items:
+              $ref: '#/definitions/model.QueueElemShort'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get queue
+      tags:
+      - queue
+  /queue/{project_name}/{pipeline_name}/{build_number}:
+    delete:
+      operationId: delete-queue-elem
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Build number
+        in: path
+        name: build_number
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete queue elem
+      tags:
+      - queue
+    get:
+      operationId: single-queue-elem
+      parameters:
+      - description: Project name
+        in: path
+        name: project_name
+        required: true
+        type: string
+      - description: Pipeline name
+        in: path
+        name: pipeline_name
+        required: true
+        type: string
+      - description: Build number
+        in: path
+        name: build_number
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Requested queue elem
+          schema:
+            $ref: '#/definitions/model.QueueElem'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get the single queue elem
+      tags:
+      - queue
   /secrets:
     get:
       parameters:

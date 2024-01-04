@@ -19,7 +19,7 @@ var (
 		Use:   appName,
 		Short: "Command line tool for CI/CD workflow",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			logger = log.NewLogger(cmd.Use, viper.GetString("log.level"), viper.GetString("log.dir"))
+			logger = log.NewLogger(cmd.Use, "main", viper.GetString("log.level"), viper.GetString("log.dir"))
 		},
 	}
 )

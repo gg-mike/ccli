@@ -8,25 +8,22 @@ type Command struct {
 	Total int
 }
 
-type Context struct {
+type Context[T any] struct {
 	writer       io.Writer
 	reader       io.Reader
-	cmdChan      chan any
-	outChan      chan string
-	errChan      chan error
 	closeConn    func() error
 	closeSession func() error
 
-	ParseCmd func(cmd string, idx, total int) any
+	CmdChan chan T
+	OutChan chan string
+	ErrChan chan error
 
-	OnCmd func(any)
-	OnOut func(string)
-	OnErr func(error)
+	ParseCmd func(cmd string, idx, total int) T
 }
 
-func Init(username, address, privateKey string) (Context, error) {
+func Init[T any](username, address, privateKey string) (Context[T], error) {
 	var err error
-	ctx := Context{
+	ctx := Context[T]{
 		closeConn:    func() error { return nil },
 		closeSession: func() error { return nil },
 	}
@@ -55,9 +52,19 @@ func Init(username, address, privateKey string) (Context, error) {
 		return ctx, err
 	}
 
-	ctx.cmdChan = make(chan any)
-	ctx.outChan = make(chan string)
-	ctx.errChan = make(chan error)
+	ctx.CmdChan = make(chan T)
+	ctx.OutChan = make(chan string)
+	ctx.ErrChan = make(chan error)
 
 	return ctx, nil
+}
+
+func (ctx Context[T]) Close() error {
+	if err := ctx.closeSession(); err != nil {
+		return err
+	}
+	if err := ctx.closeConn(); err != nil {
+		return err
+	}
+	return nil
 }

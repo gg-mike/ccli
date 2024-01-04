@@ -14,18 +14,24 @@ import (
 )
 
 type Logger struct {
-	impl   zerolog.Logger
-	module string
+	impl      zerolog.Logger
+	module    string
+	component string
 }
 
-func NewLogger(module, level, dir string) Logger {
+func NewLogger(module, component, level, dir string) Logger {
 	if dir == "" {
-		return setup(module, level)
+		return setup(module, component, level)
 	}
-	return setupMultiOutput(module, level, dir)
+	return setupMultiOutput(module, component, level, dir)
 }
 
-func setup(module, level string) Logger {
+func (logger Logger) NewComponentLogger(component string) Logger {
+	logger.component = component
+	return logger
+}
+
+func setup(module, component, level string) Logger {
 	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
 		r, _ := regexp.Compile(`[^\\/]+[\\/][^\\/]+$`)
 		shortPath := r.FindString(file)
@@ -37,17 +43,17 @@ func setup(module, level string) Logger {
 	}
 	lvl, err := zerolog.ParseLevel(level)
 	cw := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
-	logger := Logger{log.Logger.Level(lvl).Output(cw), module}
+	logger := Logger{log.Logger.Level(lvl).Output(cw), module, component}
 	if err != nil {
 		logger.Warn().Err(err).Send()
 	}
 	return logger
 }
 
-func setupMultiOutput(module, level, dir string) Logger {
+func setupMultiOutput(module, component, level, dir string) Logger {
 	os.MkdirAll(dir, os.ModePerm)
 
-	logger := setup(module, level)
+	logger := setup(module, component, level)
 
 	f, err := os.Create(fmt.Sprintf("%s/%s-%s.log", dir, module, time.Now().Format("20060102-150405")))
 	if err != nil {
@@ -57,33 +63,33 @@ func setupMultiOutput(module, level, dir string) Logger {
 
 	writers := io.MultiWriter(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}, f)
 
-	return Logger{logger.impl.Output(writers), module}
+	return Logger{logger.impl.Output(writers), module, component}
 }
 
 func (logger Logger) Debug() *zerolog.Event {
-	return logger.impl.Debug().Str("module", logger.module).Caller(1)
+	return logger.impl.Debug().Str("module", logger.module).Str("component", logger.component).Caller(1)
 }
 
 func (logger Logger) Info() *zerolog.Event {
-	return logger.impl.Info().Str("module", logger.module).Caller(1)
+	return logger.impl.Info().Str("module", logger.module).Str("component", logger.component).Caller(1)
 }
 
 func (logger Logger) Warn() *zerolog.Event {
-	return logger.impl.Warn().Str("module", logger.module).Caller(1)
+	return logger.impl.Warn().Str("module", logger.module).Str("component", logger.component).Caller(1)
 }
 
 func (logger Logger) Error() *zerolog.Event {
-	return logger.impl.Error().Str("module", logger.module).Caller(1)
+	return logger.impl.Error().Str("module", logger.module).Str("component", logger.component).Caller(1)
 }
 
 func (logger Logger) Fatal() *zerolog.Event {
-	return logger.impl.Fatal().Str("module", logger.module).Caller(1)
+	return logger.impl.Fatal().Str("module", logger.module).Str("component", logger.component).Caller(1)
 }
 
 func (logger Logger) Panic() *zerolog.Event {
-	return logger.impl.Panic().Str("module", logger.module).Caller(1)
+	return logger.impl.Panic().Str("module", logger.module).Str("component", logger.component).Caller(1)
 }
 
 func (logger Logger) Trace() *zerolog.Event {
-	return logger.impl.Trace().Str("module", logger.module).Caller(1)
+	return logger.impl.Trace().Str("module", logger.module).Str("component", logger.component).Caller(1)
 }

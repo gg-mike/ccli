@@ -11,7 +11,10 @@ import (
 	"github.com/gg-mike/ccli/pkg/api/handler"
 	"github.com/gg-mike/ccli/pkg/api/router"
 	"github.com/gg-mike/ccli/pkg/db"
+	"github.com/gg-mike/ccli/pkg/engine"
+	"github.com/gg-mike/ccli/pkg/engine/standalone"
 	"github.com/gg-mike/ccli/pkg/log"
+	"github.com/gg-mike/ccli/pkg/scheduler"
 	"github.com/gg-mike/ccli/pkg/vault"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -31,6 +34,7 @@ type Handler struct {
 	logger log.Logger
 	srv    *http.Server
 	state  *handler.State
+	engine *engine.Engine
 }
 
 func NewHandler(logger log.Logger, f *Flags) *Handler {
@@ -40,12 +44,19 @@ func NewHandler(logger log.Logger, f *Flags) *Handler {
 		state:  handler.NewState(),
 	}
 
+	if h.flags.Scheduler == "standalone" {
+		h.engine = engine.NewEngine(logger, &standalone.Binder{})
+	} else {
+		panic("not implemented")
+	}
+
 	h.state.Healthy()
 	h.state.NotReady()
 
 	h.initServer()
 	h.initDb()
 	h.initVault()
+	h.initScheduler()
 
 	return h
 }
@@ -57,6 +68,7 @@ func (h *Handler) Run() {
 			h.logger.Fatal().Err(err).Msg("server start ended with error")
 		}
 	}()
+	go h.engine.Run()
 
 	h.state.Ready()
 
@@ -72,6 +84,8 @@ func (h *Handler) Shutdown() {
 	stop()
 
 	println()
+
+	<-h.engine.Shutdown()
 
 	h.logger.Info().Msg("shutting down gracefully, press Ctrl+C again to force")
 
@@ -100,6 +114,7 @@ func (h *Handler) initServer() {
 	router.InitBuildRouter(pipelineRg)
 	router.InitSecretRouter(rg, projectRg, pipelineRg)
 	router.InitVariableRouter(rg, projectRg, pipelineRg)
+	router.InitQueueRouter(rg)
 
 	docs.SwaggerInfo.Title = "ccli - CI/CD CLI Application"
 	docs.SwaggerInfo.BasePath = "/api"
@@ -124,4 +139,8 @@ func (h *Handler) initDb() {
 		h.logger.Fatal().Err(err).Msg("error while connecting to the db")
 	}
 	h.logger.Info().Msg("successfully connected to the db")
+}
+
+func (h *Handler) initScheduler() {
+	scheduler.Init(h.engine)
 }
