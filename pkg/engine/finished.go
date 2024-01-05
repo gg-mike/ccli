@@ -27,8 +27,14 @@ func (e *Engine) finished(buildID string) {
 			e.logger.Error().Str("worker_name", build.WorkerName.String).Err(err).Msg("could not decrement active builds counter")
 			return err
 		}
+		if worker.ActiveBuilds == 0 {
+			if err := tx.Model(&worker).UpdateColumn("status", model.WorkerIdle).Error; err != nil {
+				e.logger.Error().Str("worker_name", build.WorkerName.String).Err(err).Msg("could not change status")
+				return err
+			}
+		}
 
-		defer e.binder.Unbind(worker)
+		e.binder.Unbind(worker)
 
 		return nil
 	}) != nil {

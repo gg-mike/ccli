@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"time"
+
 	"github.com/gg-mike/ccli/pkg/db"
 	"github.com/gg-mike/ccli/pkg/engine/common"
 	"github.com/gg-mike/ccli/pkg/log"
@@ -58,7 +60,9 @@ func (e *Engine) Run() {
 	e.logger.Debug().Msg("binding any builds scheduled in previous run")
 
 	e.binder.SetOnBind(e.execute)
-	e.binder.Bind()
+	if err := e.binder.Bind(); err != nil {
+		e.logger.Error().Err(err).Msg("bind ended with error")
+	}
 
 	run := true
 
@@ -79,17 +83,31 @@ func (e *Engine) Run() {
 		case ctx := <-e.addToQueue:
 			e.eventLog(EventAddToQueue, EventProcessed, ctx.Build.ID())
 
+			ctx.Build.Steps = append(ctx.Build.Steps, model.BuildStep{
+				Name:         "Worker binding",
+				BuildNumber:  ctx.Build.Number,
+				PipelineName: ctx.Build.PipelineName,
+				ProjectName:  ctx.Build.ProjectName,
+				Start:        time.Now(),
+				Logs:         []model.BuildLog{},
+			})
+
 			if err := db.Get().Create(&model.QueueElem{ID: ctx.Build.ID(), Context: ctx}).Error; err != nil {
 				e.eventErr(EventAddToQueue, EventFailed, err, ctx.Build.ID())
 				continue
 			}
-			e.binder.Bind()
+
+			if err := e.binder.Bind(); err != nil {
+				e.logger.Error().Err(err).Msg("bind ended with error")
+			}
 
 			e.eventLog(EventAddToQueue, EventComplete, ctx.Build.ID())
 		case <-e.changeInWorkers:
 			e.eventLog(EventChangeInWorkers, EventProcessed)
 
-			e.binder.Bind()
+			if err := e.binder.Bind(); err != nil {
+				e.logger.Error().Err(err).Msg("bind ended with error")
+			}
 
 			e.eventLog(EventChangeInWorkers, EventComplete)
 		case <-e.shutdown:

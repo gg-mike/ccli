@@ -5,15 +5,15 @@ import (
 )
 
 type BuildStep struct {
-	Name         string        `json:"name"           gorm:"primaryKey;uniqueIndex:idx_build_steps"`
-	BuildNumber  uint          `json:"-"              gorm:"primaryKey;uniqueIndex:idx_build_steps"`
-	PipelineName string        `json:"-"              gorm:"primaryKey;uniqueIndex:idx_build_steps"`
-	ProjectName  string        `json:"-"              gorm:"primaryKey;uniqueIndex:idx_build_steps"`
-	Start        time.Time     `json:"start"`
-	Duration     time.Duration `json:"duration"       gorm:"not null"`
-	Logs         []BuildLog    `json:"logs,omitempty" gorm:"serializer:json"`
-	CreatedAt    time.Time     `json:"created_at"     gorm:"default:now()"`
-	UpdatedAt    time.Time     `json:"updated_at"     gorm:"default:now()"`
+	Name         string     `json:"name"           gorm:"primaryKey;uniqueIndex:idx_build_steps"`
+	BuildNumber  uint       `json:"-"              gorm:"primaryKey;uniqueIndex:idx_build_steps"`
+	PipelineName string     `json:"-"              gorm:"primaryKey;uniqueIndex:idx_build_steps"`
+	ProjectName  string     `json:"-"              gorm:"primaryKey;uniqueIndex:idx_build_steps"`
+	Start        time.Time  `json:"start"`
+	Duration     string     `json:"duration"       gorm:"not null"`
+	Logs         []BuildLog `json:"logs,omitempty" gorm:"serializer:json"`
+	CreatedAt    time.Time  `json:"created_at"     gorm:"default:now()"`
+	UpdatedAt    time.Time  `json:"updated_at"     gorm:"default:now()"`
 }
 
 type BuildLog struct {
@@ -35,5 +35,5 @@ func (step *BuildStep) AppendOutput(output string) {
 }
 
 func (step *BuildStep) End() {
-	step.Duration = time.Since(step.Start)
+	step.Duration = time.Since(step.Start).String()
 }

@@ -49,6 +49,7 @@ func (ctx *Context[T]) Run(commands []string) {
 		ctx.CmdChan <- ctx.ParseCmd(command, i, total)
 		if err := runCommand(command, in, inStatus, outReader); err != nil {
 			ctx.ErrChan <- err
+			return
 		}
 	}
 	ctx.ErrChan <- nil

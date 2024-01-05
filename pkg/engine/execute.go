@@ -2,6 +2,7 @@ package engine
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gg-mike/ccli/pkg/db"
@@ -10,16 +11,18 @@ import (
 )
 
 var ErrBuildCancelled = errors.New("build cancelled")
+var ErrBuildFailed = errors.New("build failed")
 
 func (e *Engine) execute(ctx model.QueueContext) {
 	id := ctx.Build.ID()
 
 	e.logger.Debug().Str("build_id", id).Str("step", "execute").Msg("build execution started")
 	var err error
+	build := model.BuildFromID(ctx.Build.ID())
 	if err = e._execute(&ctx); err != nil && err != ErrBuildCancelled {
 		go e.Finished(id)
 		e.logger.Warn().Str("build_id", id).Str("step", "execute").Err(err).Msg("build execution ended with error")
-		if err := db.Get().Model(&ctx.Build).UpdateColumn("status", model.BuildFailed).Error; err != nil {
+		if err := db.Get().Model(&build).UpdateColumn("status", model.BuildFailed).Error; err != nil {
 			e.logger.Error().Str("build_id", id).Str("step", "execute").Err(err).Msg("could not update build")
 			return
 		}
@@ -28,12 +31,12 @@ func (e *Engine) execute(ctx model.QueueContext) {
 
 	go e.Finished(id)
 
-	e.logger.Debug().Str("build_id", id).Str("step", "execute").Str("status", ctx.Build.Status.String()).Msg("build execution ended")
+	e.logger.Debug().Str("build_id", id).Str("step", "execute").Str("status", ctx.Build.Status).Msg("build execution ended")
 
 	if err == ErrBuildCancelled {
 		return
 	}
-	if err := db.Get().Model(&ctx.Build).UpdateColumn("status", model.BuildSuccessful).Error; err != nil {
+	if err := db.Get().Model(&build).UpdateColumn("status", model.BuildSuccessful).Error; err != nil {
 		e.logger.Error().Str("build_id", id).Str("step", "execute").Err(err).Msg("could not update build")
 		return
 	}
@@ -59,17 +62,20 @@ func (e *Engine) _execute(ctx *model.QueueContext) error {
 	}
 	connCtx.ParseCmd = parseCmd
 
-	for _, step := range ctx.Pipeline.Config.Steps {
+	failed := false
+
+	for _, step := range ctx.Config.Steps {
 		if err := e.runStep(ctx, &connCtx, step); err != nil {
 			if err != ErrBuildCancelled {
-				e.logger.Error().Str("build_id", ctx.Build.ID()).Err(err).Msgf("error during step [%s]", step.Name)
+				e.logger.Warn().Str("build_id", ctx.Build.ID()).Err(err).Msgf("error during step [%s]", step.Name)
+				failed = true
 			}
 			break
 		}
 	}
 
-	if e.runStep(ctx, &connCtx, model.PipelineConfigStep{Name: "Cleanup", Commands: ctx.Pipeline.Config.Cleanup}) != nil {
-		e.logger.Error().Str("build_id", ctx.Build.ID()).Err(err).Msgf("error during cleanup")
+	if e.runStep(ctx, &connCtx, model.PipelineConfigStep{Name: "Cleanup", Commands: ctx.Config.Cleanup}) != nil {
+		e.logger.Warn().Str("build_id", ctx.Build.ID()).Err(err).Msgf("error during cleanup")
 	}
 
 	if err := connCtx.Close(); err != nil {
@@ -77,6 +83,9 @@ func (e *Engine) _execute(ctx *model.QueueContext) error {
 		return err
 	}
 
+	if failed {
+		return ErrBuildFailed
+	}
 	return nil
 }
 
@@ -92,50 +101,47 @@ func (e Engine) runStep(ctx *model.QueueContext, connCtx *ssh.Context[model.Buil
 		return ErrBuildCancelled
 	}
 
-	ctx.Build.Steps = append(ctx.Build.Steps, model.BuildStep{
+	buildStep := model.BuildStep{
 		Name:         step.Name,
 		BuildNumber:  ctx.Build.Number,
 		PipelineName: ctx.Build.PipelineName,
 		ProjectName:  ctx.Build.ProjectName,
 		Start:        start,
 		Logs:         []model.BuildLog{},
-	})
+	}
 
 	go connCtx.Run(step.Commands)
+
+	<-connCtx.OutChan
+
+	fmt.Printf("\n### %s ###\n\n", step.Name)
 
 	var err error
 	for running {
 		select {
 		case cmd := <-connCtx.CmdChan:
-			e.logger.Debug().Str("build_id", ctx.Build.ID()).Str("event", "cmd").
-				Int("idx", cmd.Idx).Int("total", cmd.Total).Str("cmd", cmd.Command).Send()
-
-			ctx.Build.AppendLog(cmd)
+			fmt.Printf("\033[32m[%d/%d] $ %s\033[0m\n", cmd.Idx+1, cmd.Total, cmd.Command)
+			buildStep.AppendLog(cmd)
 		case out := <-connCtx.OutChan:
-			e.logger.Debug().Str("build_id", ctx.Build.ID()).Str("event", "out").
-				Str("out", out).Send()
-
-			ctx.Build.AppendOutput(out)
+			fmt.Println(out)
+			buildStep.AppendOutput(out)
 		case err = <-connCtx.ErrChan:
-			e.logger.Debug().Str("build_id", ctx.Build.ID()).Str("event", "err").
-				Err(err).Send()
-
-			ctx.Build.AppendOutput(err.Error())
+			if err != nil {
+				fmt.Printf("\033[1;31m%s\033[00m\n", err.Error())
+				buildStep.AppendOutput(err.Error())
+			}
 			running = false
 		}
 	}
 
-	ctx.Build.End()
-	if err := db.Get().Create(&ctx.Build.Steps[len(ctx.Build.Steps)-1]).Error; err != nil {
+	buildStep.End()
+
+	ctx.Build.Steps = append(ctx.Build.Steps, buildStep)
+
+	if err := db.Get().Create(&buildStep).Error; err != nil {
 		return err
 	}
-	if err != nil {
-		if err := db.Get().Model(&ctx.Build).UpdateColumn("status", model.BuildFailed).Error; err != nil {
-			return err
-		}
-		return err
-	}
-	return nil
+	return err
 }
 
 func parseCmd(cmd string, idx, total int) model.BuildLog {

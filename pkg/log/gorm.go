@@ -63,5 +63,5 @@ func (logger *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() 
 		return
 	}
 
-	logger.Logger.Debug().Str("module", "gorm").Fields(fields).Msg("query")
+	logger.Logger.Debug().Str("module", "gorm").Caller(3).Fields(fields).Msg("query")
 }

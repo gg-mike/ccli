@@ -12,38 +12,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type BuildStatus uint8
-
 const (
-	BuildScheduled BuildStatus = iota
-	BuildRunning
-	BuildSuccessful
-	BuildFailed
-	BuildCanceled
+	BuildScheduled  = "scheduled"
+	BuildRunning    = "running"
+	BuildSuccessful = "successful"
+	BuildFailed     = "failed"
+	BuildCanceled   = "canceled"
 )
-
-func (s BuildStatus) String() string {
-	switch s {
-	case BuildScheduled:
-		return "scheduled"
-	case BuildRunning:
-		return "running"
-	case BuildSuccessful:
-		return "successful"
-	case BuildFailed:
-		return "failed"
-	case BuildCanceled:
-		return "canceled"
-	default:
-		return "unknown"
-	}
-}
 
 type Build struct {
 	Number       uint           `json:"number"          gorm:"primaryKey;uniqueIndex:idx_builds"`
-	PipelineName string         `json:"-"               gorm:"primaryKey;uniqueIndex:idx_builds"`
-	ProjectName  string         `json:"-"               gorm:"primaryKey;uniqueIndex:idx_builds"`
-	Status       BuildStatus    `json:"status"          gorm:"default:0"`
+	PipelineName string         `json:"pipeline_name"   gorm:"primaryKey;uniqueIndex:idx_builds"`
+	ProjectName  string         `json:"project_name"    gorm:"primaryKey;uniqueIndex:idx_builds"`
+	Status       string         `json:"status"          gorm:"default:0"`
 	Steps        []BuildStep    `json:"steps,omitempty" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:BuildNumber,PipelineName,ProjectName"`
 	WorkerName   sql.NullString `json:"worker_name"`
 	CreatedAt    time.Time      `json:"created_at"      gorm:"default:now()"`
@@ -52,7 +33,7 @@ type Build struct {
 
 type BuildShort struct {
 	Number     uint           `json:"number"`
-	Status     BuildStatus    `json:"status"`
+	Status     string         `json:"status"`
 	WorkerName sql.NullString `json:"worker_name,omitempty"`
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
@@ -88,7 +69,7 @@ func (m *Build) BeforeUpdate(tx *gorm.DB) error {
 		return nil
 	default:
 		return fmt.Errorf("cannot change status of build from [%s] to [%s]",
-			prev.(Build).Status.String(), BuildCanceled.String())
+			prev.(Build).Status, BuildCanceled)
 	}
 }
 

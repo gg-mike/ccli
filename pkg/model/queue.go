@@ -16,12 +16,13 @@ type QueueElemShort struct {
 }
 
 type QueueContext struct {
-	Build           Build
-	Pipeline        Pipeline
-	Project         Project
-	GlobalVariables []Variable
-	GlobalSecrets   []Secret
-	Worker          Worker
+	Build     Build
+	Repo      string
+	Branch    string
+	Config    PipelineConfig
+	Secrets   []Secret
+	Variables []Variable
+	Worker    Worker
 }
 
 func (QueueElem) TableName() string {

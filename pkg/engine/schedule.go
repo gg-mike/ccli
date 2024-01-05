@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gg-mike/ccli/pkg/db"
@@ -32,7 +33,7 @@ func (e *Engine) buildContext(buildID string) (model.QueueContext, error) {
 		ctx.Build.End()
 
 		e.logger.Debug().Str("build_id", buildID).Str("step", "context-create").
-			Str("duration", ctx.Build.Steps[len(ctx.Build.Steps)-1].Duration.String()).Msg("build context creation succeeded")
+			Str("duration", ctx.Build.Steps[0].Duration).Msg("build context creation succeeded")
 		if err := db.Get().Create(&ctx.Build.Steps[0]).Error; err != nil {
 			e.logger.Error().Str("build_id", buildID).Str("step", "context-create").Err(err).Msg("could not write build steps")
 			return ctx, ErrBuildSave
@@ -53,7 +54,7 @@ func (e *Engine) buildContext(buildID string) (model.QueueContext, error) {
 	ctx.Build.End()
 
 	e.logger.Debug().Str("build_id", buildID).Str("step", "context-create").Err(err).
-		Str("duration", ctx.Build.Steps[len(ctx.Build.Steps)-1].Duration.String()).Msg("build context creation failed")
+		Str("duration", ctx.Build.Steps[0].Duration).Msg("build context creation failed")
 	if err := db.Get().Create(&ctx.Build.Steps[0]).Error; err != nil {
 		e.logger.Error().Str("build_id", buildID).Str("step", "context-create").Err(err).Msg("could not write build steps")
 		return ctx, ErrBuildSave
@@ -64,10 +65,7 @@ func (e *Engine) buildContext(buildID string) (model.QueueContext, error) {
 func newQueueContext(buildID string, start time.Time) (model.QueueContext, error) {
 	ctx := model.QueueContext{}
 	ctx.Build = model.BuildFromID(buildID)
-	ctx.Pipeline.Name = ctx.Build.PipelineName
-	ctx.Pipeline.ProjectName = ctx.Build.ProjectName
-	ctx.Project.Name = ctx.Build.ProjectName
-	ctx.Build.Steps = []model.BuildStep{
+	steps := []model.BuildStep{
 		{
 			Name:         "Queue context creation",
 			BuildNumber:  ctx.Build.Number,
@@ -77,53 +75,77 @@ func newQueueContext(buildID string, start time.Time) (model.QueueContext, error
 			Logs:         []model.BuildLog{},
 		},
 	}
-	fmt.Printf("newQueueContext: %+v\n", ctx.Build.Steps)
 
-	if !initSingle(&ctx, &ctx.Build, "build") {
+	if db.Get().Preload(clause.Associations).First(&ctx.Build).Error != nil {
+		ctx.Build.Status = model.BuildFailed
+		ctx.Build.Steps = steps
+		ctx.Build.End()
 		return ctx, ErrInvalidBuild
 	}
+	ctx.Build.Steps = steps
+	ctx.Build.AppendLog(model.BuildLog{Command: "[build init]", Output: "success"})
 
-	if !initSingle(&ctx, &ctx.Pipeline, "pipeline") {
+	pipeline := model.Pipeline{Name: ctx.Build.PipelineName, ProjectName: ctx.Build.ProjectName}
+	project := model.Project{Name: ctx.Build.ProjectName}
+	if !initSingle(&ctx, &pipeline, "pipeline") {
 		return ctx, ErrInvalidPipeline
 	}
+	ctx.Branch = pipeline.Branch
+	ctx.Config = pipeline.Config
 
-	if !initSingle(&ctx, &ctx.Project, "project") {
+	if !initSingle(&ctx, &project, "project") {
 		return ctx, ErrInvalidProject
 	}
+	ctx.Repo = project.Repo
 
-	if !initMultiple(&ctx, &ctx.GlobalSecrets, "secrets") {
+	if !initMultiple(&ctx, &ctx.Secrets, "secrets", "path") {
 		return ctx, ErrInvalidSecrets
 	}
-
-	if !initMultiple(&ctx, &ctx.GlobalVariables, "variables") {
+	if !initMultiple(&ctx, &ctx.Variables, "variables", "path", "value") {
 		return ctx, ErrInvalidVariables
 	}
 
 	return ctx, nil
 }
 
-func initSingle[T any](ctx *model.QueueContext, single *T, elem string) bool {
-	steps := ctx.Build.Steps
-	if db.Get().Preload(clause.Associations).First(single).Error != nil {
+func initSingle[T any](ctx *model.QueueContext, m *T, elem string) bool {
+	if db.Get().First(m).Error != nil {
 		ctx.Build.Status = model.BuildFailed
-		ctx.Build.Steps = steps
 		ctx.Build.End()
 		return false
 	}
-	ctx.Build.Steps = steps
 	ctx.Build.AppendLog(model.BuildLog{Command: fmt.Sprintf("[%s init]", elem), Output: "success"})
 	return true
 }
 
-func initMultiple[T any](ctx *model.QueueContext, multiple *[]T, elem string) bool {
-	output, ok := getOutput(db.Get().Find(multiple, "project_name IS NULL AND pipeline_name IS NULL").Error)
-	ctx.Build.AppendLog(model.BuildLog{Command: fmt.Sprintf("[global %s init]", elem), Output: output})
+func initMultiple[T any](ctx *model.QueueContext, multiple *[]T, elem string, fields ...string) bool {
+	selector := fmt.Sprintf("key, %s", strings.Join(fields, ", "))
+	agg := fmt.Sprintf("key, %s", strings.Join(getAgg(fields), ", "))
+
+	subQuery := db.Get().Table(elem).
+		Select(selector).
+		Order("key, project_name, pipeline_name")
+
+	output, ok := getOutput(db.Get().Table("(?) as sq", subQuery).
+		Select(agg).
+		Group("key").
+		Scan(multiple).Error)
+
+	ctx.Build.AppendLog(model.BuildLog{Command: fmt.Sprintf("[%s init]", elem), Output: output})
 	if !ok {
 		ctx.Build.Status = model.BuildFailed
 		ctx.Build.End()
 		return false
 	}
 	return true
+}
+
+func getAgg(values []string) []string {
+	out := []string{}
+	for _, value := range values {
+		out = append(out, "(array_agg("+value+")::TEXT[])[1] as "+value)
+	}
+	return out
 }
 
 func getOutput(err error) (string, bool) {

@@ -10,7 +10,7 @@ import (
 )
 
 type Variable struct {
-	Key          string         `json:"key"            gorm:"primaryKey;uniqueIndex:idx_variables;not null"`
+	Key          string         `json:"key"            gorm:"uniqueIndex:idx_variables"`
 	ProjectName  sql.NullString `json:"-"              gorm:"uniqueIndex:idx_variables"`
 	PipelineName sql.NullString `json:"-"              gorm:"uniqueIndex:idx_variables"`
 	Value        string         `json:"value"          gorm:"not null"`

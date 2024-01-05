@@ -26,19 +26,19 @@ func createEnvSteps(ctx *model.QueueContext) error {
 		return err
 	}
 
-	ctx.Pipeline.Config.Steps = append([]model.PipelineConfigStep{
+	ctx.Config.Steps = append([]model.PipelineConfigStep{
 		workdirSteps, secretsSteps, variablesSteps,
-	}, ctx.Pipeline.Config.Steps...)
+	}, ctx.Config.Steps...)
 
-	ctx.Pipeline.Config.Cleanup = append(ctx.Pipeline.Config.Cleanup, workdirCleanup...)
-	ctx.Pipeline.Config.Cleanup = append(ctx.Pipeline.Config.Cleanup, secretsCleanup...)
-	ctx.Pipeline.Config.Cleanup = append(ctx.Pipeline.Config.Cleanup, variablesCleanup...)
+	ctx.Config.Cleanup = append(ctx.Config.Cleanup, workdirCleanup...)
+	ctx.Config.Cleanup = append(ctx.Config.Cleanup, secretsCleanup...)
+	ctx.Config.Cleanup = append(ctx.Config.Cleanup, variablesCleanup...)
 
 	return nil
 }
 
 func createWorkdirStep(ctx *model.QueueContext) (model.PipelineConfigStep, []string) {
-	workdir := ctx.Build.ID()
+	workdir := strings.ReplaceAll(ctx.Build.ID(), "/", "_")
 	return model.PipelineConfigStep{
 		Name:     "Work dir setup",
 		Commands: []string{"mkdir -p " + workdir, "cd " + workdir},
@@ -47,19 +47,15 @@ func createWorkdirStep(ctx *model.QueueContext) (model.PipelineConfigStep, []str
 
 func createSecretsStep(ctx *model.QueueContext) (model.PipelineConfigStep, []string, error) {
 	secrets := map[string]envInstance{}
-	groups := [][]model.Secret{ctx.GlobalSecrets, ctx.Project.Secrets, ctx.Pipeline.Secrets}
-
-	for _, group := range groups {
-		for _, secret := range group {
-			value, err := secret.Value()
-			if err != nil {
-				return model.PipelineConfigStep{}, []string{}, err
-			}
-			secrets[secret.Key] = envInstance{value, secret.Path}
+	for _, secret := range ctx.Secrets {
+		value, err := secret.Value()
+		if err != nil {
+			return model.PipelineConfigStep{}, []string{}, err
 		}
+		secrets[secret.Key] = envInstance{value, secret.Path}
 	}
 
-	commands, cleanUpCommands, err := prepareStepCommands(ctx.Pipeline.Config.System, secrets, "_")
+	commands, cleanUpCommands, err := prepareStepCommands(ctx.Config.System, secrets, "_")
 	if err != nil {
 		return model.PipelineConfigStep{}, []string{}, err
 	}
@@ -70,22 +66,18 @@ func createSecretsStep(ctx *model.QueueContext) (model.PipelineConfigStep, []str
 func createVariablesStep(ctx *model.QueueContext) (model.PipelineConfigStep, []string, error) {
 	variables := map[string]envInstance{}
 
-	variables["__PROJECT_NAME"] = envInstance{ctx.Project.Name, ""}
-	variables["__REPO"] = envInstance{ctx.Project.Repo, ""}
+	variables["__PROJECT_NAME"] = envInstance{ctx.Build.ProjectName, ""}
+	variables["__REPO"] = envInstance{ctx.Repo, ""}
 
-	variables["__PIPELINE_NAME"] = envInstance{ctx.Pipeline.Name, ""}
-	variables["__BRANCH"] = envInstance{ctx.Pipeline.Branch, ""}
-	maps.Copy(variables, setRepoVariables(ctx.Project.Repo))
+	variables["__PIPELINE_NAME"] = envInstance{ctx.Build.PipelineName, ""}
+	variables["__BRANCH"] = envInstance{ctx.Branch, ""}
+	maps.Copy(variables, setRepoVariables(ctx.Repo))
 
-	groups := [][]model.Variable{ctx.GlobalVariables, ctx.Project.Variables, ctx.Pipeline.Variables}
-
-	for _, group := range groups {
-		for _, variable := range group {
-			variables[variable.Key] = envInstance{variable.Value, variable.Path}
-		}
+	for _, variable := range ctx.Variables {
+		variables[variable.Key] = envInstance{variable.Value, variable.Path}
 	}
 
-	commands, cleanUpCommands, err := prepareStepCommands(ctx.Pipeline.Config.System, variables, "")
+	commands, cleanUpCommands, err := prepareStepCommands(ctx.Config.System, variables, "")
 	if err != nil {
 		return model.PipelineConfigStep{}, []string{}, err
 	}
@@ -97,8 +89,8 @@ func prepareStepCommands(system string, env map[string]envInstance, prefix strin
 	var templateEnv, templateFile, templateFileDelete string
 	// TODO: support for over OS
 	if strings.ToLower(system) == "linux" {
-		templateEnv = "export %s%s=\"%s\""
-		templateFile = "export %s%s=\"%s\" && echo '%s' > %s"
+		templateEnv = "export %s%s='%s'"
+		templateFile = "export %s%s='%s' && echo '%s' > %s"
 		templateFileDelete = "rm -f %s"
 	} else {
 		panic(system + " is not supported")

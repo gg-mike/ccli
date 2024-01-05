@@ -11,67 +11,61 @@ import (
 	"gorm.io/gorm"
 )
 
-type WorkerType int
-
 const (
-	WorkerStatic WorkerType = iota
-	WorkerDockerHost
+	WorkerStatic     = "static"
+	WorkerDockerHost = "docker_host"
 )
 
-type WorkerStatus int
-
 const (
-	WorkerIdle WorkerStatus = iota
-	WorkerUsed
-	WorkerUnreachable
+	WorkerIdle        = "idle"
+	WorkerUsed        = "used"
+	WorkerUnreachable = "unreachable"
 )
 
-type WorkerStrategy int
-
 const (
-	WorkerUseMin = iota
-	WorkerBalanced
-	WorkerUseMax
+	WorkerMin      = "min"
+	WorkerBalanced = "balance"
+	WorkerMax      = "max"
 )
 
 type Worker struct {
-	Name         string         `json:"name"             gorm:"primaryKey"`
-	Address      string         `json:"address"          gorm:"not null"`
-	System       string         `json:"system"           gorm:"not null"`
-	Username     string         `json:"username"         gorm:"not null"`
-	Type         WorkerType     `json:"type"             gorm:"not null"`
-	Status       WorkerStatus   `json:"status"           gorm:"default:0"`
-	Strategy     WorkerStrategy `json:"strategy"         gorm:"default:0"`
-	ActiveBuilds int            `json:"active_builds"    gorm:"default:0"`
-	Capacity     int            `json:"capacity"         gorm:"default:0"`
-	Builds       []Build        `json:"builds,omitempty" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
-	CreatedAt    time.Time      `json:"created_at"       gorm:"default:now()"`
-	UpdatedAt    time.Time      `json:"updated_at"       gorm:"default:now()"`
+	Name         string    `json:"name"             gorm:"primaryKey"`
+	Address      string    `json:"address"          gorm:"not null"`
+	System       string    `json:"system"           gorm:"not null"`
+	Username     string    `json:"username"         gorm:"not null"`
+	Type         string    `json:"type"             gorm:"not null"`
+	Status       string    `json:"status"           gorm:"default:0"`
+	Strategy     string    `json:"strategy"         gorm:"default:0"`
+	ActiveBuilds int       `json:"active_builds"    gorm:"default:0"`
+	Capacity     int       `json:"capacity"         gorm:"default:0"`
+	Builds       []Build   `json:"builds,omitempty" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	CreatedAt    time.Time `json:"created_at"       gorm:"default:now()"`
+	UpdatedAt    time.Time `json:"updated_at"       gorm:"default:now()"`
 }
 
 type WorkerShort struct {
-	Name         string         `json:"name"`
-	Address      string         `json:"address"`
-	System       string         `json:"system"`
-	Username     string         `json:"username"`
-	Type         WorkerType     `json:"type"`
-	Status       WorkerStatus   `json:"status"`
-	Strategy     WorkerStrategy `json:"strategy"`
-	ActiveBuilds int            `json:"active_builds"`
-	Capacity     int            `json:"capacity"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
+	Name         string    `json:"name"`
+	Address      string    `json:"address"`
+	System       string    `json:"system"`
+	Username     string    `json:"username"`
+	Type         string    `json:"type"`
+	Status       string    `json:"status"`
+	Strategy     string    `json:"strategy"`
+	ActiveBuilds int       `json:"active_builds"`
+	Capacity     int       `json:"capacity"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type WorkerInput struct {
-	Name       string         `json:"name"`
-	Address    string         `json:"address"`
-	System     string         `json:"system"`
-	Type       WorkerType     `json:"type"`
-	Strategy   WorkerStrategy `json:"strategy"`
-	Username   string         `json:"username"`
-	PrivateKey string         `json:"private_key"`
-	Capacity   int            `json:"capacity"`
+	Name       string `json:"name"`
+	Address    string `json:"address"`
+	System     string `json:"system"`
+	Type       string `json:"type"`
+	Strategy   string `json:"strategy"`
+	Username   string `json:"username"`
+	PrivateKey string `json:"private_key"`
+	Capacity   int    `json:"capacity"`
 }
 
 func (m *Worker) BeforeCreate(tx *gorm.DB) error {
@@ -115,7 +109,7 @@ func (m *Worker) AfterUpdate(tx *gorm.DB) error {
 		}
 		privateKey = pKey
 	}
-	var status WorkerStatus
+	var status string
 	if !testConnection(*m, privateKey) {
 		status = WorkerUnreachable
 	} else if prev.(Worker).Status != WorkerUnreachable {
