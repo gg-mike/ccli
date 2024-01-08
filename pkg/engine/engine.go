@@ -77,9 +77,11 @@ func (e *Engine) Run() {
 		case buildID := <-e.finishedBuild:
 			e.eventLog(EventFinished, EventProcessed, buildID)
 
-			e.finished(buildID)
-
-			e.eventLog(EventFinished, EventComplete, buildID)
+			if err := e.finished(buildID); err != nil {
+				e.eventErr(EventFinished, EventComplete, err, buildID)
+			} else {
+				e.eventLog(EventFinished, EventComplete, buildID)
+			}
 		case ctx := <-e.addToQueue:
 			e.eventLog(EventAddToQueue, EventProcessed, ctx.Build.ID())
 
@@ -98,7 +100,7 @@ func (e *Engine) Run() {
 			}
 
 			if err := e.binder.Bind(); err != nil {
-				e.logger.Error().Err(err).Msg("bind ended with error")
+				e.eventErr(EventAddToQueue, EventFailed, err, ctx.Build.ID())
 			}
 
 			e.eventLog(EventAddToQueue, EventComplete, ctx.Build.ID())
@@ -106,10 +108,10 @@ func (e *Engine) Run() {
 			e.eventLog(EventChangeInWorkers, EventProcessed)
 
 			if err := e.binder.Bind(); err != nil {
-				e.logger.Error().Err(err).Msg("bind ended with error")
+				e.eventErr(EventChangeInWorkers, EventFailed, err)
+			} else {
+				e.eventLog(EventChangeInWorkers, EventComplete)
 			}
-
-			e.eventLog(EventChangeInWorkers, EventComplete)
 		case <-e.shutdown:
 			e.eventLog(EventShutdown, EventProcessed)
 			run = false

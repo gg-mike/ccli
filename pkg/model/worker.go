@@ -5,15 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gg-mike/ccli/pkg/docker"
 	"github.com/gg-mike/ccli/pkg/scheduler"
 	"github.com/gg-mike/ccli/pkg/ssh"
 	"github.com/gg-mike/ccli/pkg/vault"
 	"gorm.io/gorm"
-)
-
-const (
-	WorkerStatic     = "static"
-	WorkerDockerHost = "docker_host"
 )
 
 const (
@@ -33,9 +29,9 @@ type Worker struct {
 	Address      string    `json:"address"          gorm:"not null"`
 	System       string    `json:"system"           gorm:"not null"`
 	Username     string    `json:"username"         gorm:"not null"`
-	Type         string    `json:"type"             gorm:"not null"`
-	Status       string    `json:"status"           gorm:"default:0"`
-	Strategy     string    `json:"strategy"         gorm:"default:0"`
+	IsStatic     bool      `json:"is_static"        gorm:"not null"`
+	Status       string    `json:"status"           gorm:"default:idle"`
+	Strategy     string    `json:"strategy"         gorm:"default:balance"`
 	ActiveBuilds int       `json:"active_builds"    gorm:"default:0"`
 	Capacity     int       `json:"capacity"         gorm:"default:0"`
 	Builds       []Build   `json:"builds,omitempty" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
@@ -48,7 +44,7 @@ type WorkerShort struct {
 	Address      string    `json:"address"`
 	System       string    `json:"system"`
 	Username     string    `json:"username"`
-	Type         string    `json:"type"`
+	IsStatic     bool      `json:"is_static"`
 	Status       string    `json:"status"`
 	Strategy     string    `json:"strategy"`
 	ActiveBuilds int       `json:"active_builds"`
@@ -61,7 +57,7 @@ type WorkerInput struct {
 	Name       string `json:"name"`
 	Address    string `json:"address"`
 	System     string `json:"system"`
-	Type       string `json:"type"`
+	IsStatic   bool   `json:"is_static"`
 	Strategy   string `json:"strategy"`
 	Username   string `json:"username"`
 	PrivateKey string `json:"private_key"`
@@ -69,12 +65,16 @@ type WorkerInput struct {
 }
 
 func (m *Worker) BeforeCreate(tx *gorm.DB) error {
-	privateKey, ok := getPK(tx)
-	if !ok {
-		return errors.New("no private_key field given in instance")
-	}
-	if !testConnection(*m, privateKey) {
-		m.Status = WorkerUnreachable
+	if m.IsStatic {
+		privateKey, ok := getPK(tx)
+		if !ok {
+			return errors.New("no private_key field given in instance")
+		}
+		if !testConnection(*m, privateKey) {
+			m.Status = WorkerUnreachable
+		}
+	} else if err := docker.NewClient(m.Address); err != nil {
+		return err
 	}
 	return nil
 }
@@ -101,30 +101,39 @@ func (m *Worker) AfterUpdate(tx *gorm.DB) error {
 	if !ok {
 		return errors.New("prev worker not given")
 	}
-	privateKey, ok := getPK(tx)
-	if !ok {
-		pKey, err := vault.GetStr(m.Name)
-		if err != nil {
-			return fmt.Errorf("error during retrieving private key: %v", err)
+	if m.IsStatic {
+		privateKey, ok := getPK(tx)
+		if !ok {
+			pKey, err := vault.GetStr(m.Name)
+			if err != nil {
+				return fmt.Errorf("error during retrieving private key: %v", err)
+			}
+			privateKey = pKey
 		}
-		privateKey = pKey
-	}
-	var status string
-	if !testConnection(*m, privateKey) {
-		status = WorkerUnreachable
-	} else if prev.(Worker).Status != WorkerUnreachable {
-		status = prev.(Worker).Status
+		var status string
+		if !testConnection(*m, privateKey) {
+			status = WorkerUnreachable
+		} else if prev.(Worker).Status != WorkerUnreachable {
+			status = prev.(Worker).Status
+		} else {
+			status = WorkerIdle
+		}
+		if err := tx.Model(&m).UpdateColumn("status", status).Error; err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
+		return vault.SetStr(m.Name, privateKey)
 	} else {
-		status = WorkerIdle
+		if err := docker.DeleteClient(prev.(Worker).Address); err != nil {
+			return err
+		}
+		if err := docker.NewClient(m.Address); err != nil {
+			return err
+		}
 	}
-	if err := tx.Model(&m).UpdateColumn("status", status).Error; err != nil {
-		return err
-	}
-	if !ok {
-		return nil
-	}
-
-	return vault.SetStr(m.Name, privateKey)
+	return nil
 }
 
 func (m *Worker) BeforeDelete(tx *gorm.DB) error {
@@ -137,6 +146,9 @@ func (m *Worker) BeforeDelete(tx *gorm.DB) error {
 }
 
 func (m *Worker) AfterDelete(tx *gorm.DB) error {
+	if err := docker.DeleteClient(m.Address); err != nil {
+		return err
+	}
 	return vault.Del(m.Name)
 }
 
@@ -153,17 +165,8 @@ func getPK(tx *gorm.DB) (string, bool) {
 }
 
 func (m Worker) PK() (string, error) {
-	return vault.GetStr(m.Name)
-}
-
-func (m Worker) Merge(input WorkerInput) Worker {
-	merged := m
-	m.Name = input.Name
-	m.Address = input.Address
-	m.System = input.System
-	m.Type = input.Type
-	m.Strategy = input.Strategy
-	m.Username = input.Username
-	m.Capacity = input.Capacity
-	return merged
+	if m.IsStatic {
+		return vault.GetStr(m.Name)
+	}
+	return "", errors.New("docker host worker does not have a private key")
 }

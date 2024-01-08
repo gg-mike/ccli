@@ -41,7 +41,7 @@ func createWorkdirStep(ctx *model.QueueContext) (model.PipelineConfigStep, []str
 	workdir := strings.ReplaceAll(ctx.Build.ID(), "/", "_")
 	return model.PipelineConfigStep{
 		Name:     "Work dir setup",
-		Commands: []string{"mkdir -p " + workdir, "cd " + workdir},
+		Commands: []string{"cd ~", "mkdir -p " + workdir, "cd " + workdir},
 	}, []string{"cd ~", "rm -rf " + workdir}
 }
 

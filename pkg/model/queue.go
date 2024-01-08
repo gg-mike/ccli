@@ -22,7 +22,6 @@ type QueueContext struct {
 	Config    PipelineConfig
 	Secrets   []Secret
 	Variables []Variable
-	Worker    Worker
 }
 
 func (QueueElem) TableName() string {

@@ -11,6 +11,7 @@ import (
 	"github.com/gg-mike/ccli/pkg/api/handler"
 	"github.com/gg-mike/ccli/pkg/api/router"
 	"github.com/gg-mike/ccli/pkg/db"
+	"github.com/gg-mike/ccli/pkg/docker"
 	"github.com/gg-mike/ccli/pkg/engine"
 	"github.com/gg-mike/ccli/pkg/engine/standalone"
 	"github.com/gg-mike/ccli/pkg/log"
@@ -57,6 +58,7 @@ func NewHandler(logger log.Logger, f *Flags) *Handler {
 	h.initDb()
 	h.initVault()
 	h.initScheduler()
+	h.initDocker()
 
 	return h
 }
@@ -90,6 +92,10 @@ func (h *Handler) Shutdown() {
 	h.logger.Info().Msg("shutting down gracefully, press Ctrl+C again to force")
 
 	h.state.NotReady()
+
+	if err := docker.Shutdown(); err != nil {
+		h.logger.Error().Err(err).Msg("docker manager shutdown with error")
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -143,4 +149,8 @@ func (h *Handler) initDb() {
 
 func (h *Handler) initScheduler() {
 	scheduler.Init(h.engine)
+}
+
+func (h *Handler) initDocker() {
+	docker.Init()
 }

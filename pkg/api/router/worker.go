@@ -22,8 +22,9 @@ func InitWorkerRouter(base *gin.RouterGroup) {
 					filters["system LIKE ?"] = "%" + ctx.Query(key) + "%"
 				case "status":
 					filters["status IN ?"] = ctx.QueryArray(key)
-				case "type":
-					filters["type   IN ?"] = ctx.QueryArray(key)
+				case "static":
+					_, ok := ctx.GetQuery(key)
+					filters["is_static = ?"] = ok
 				}
 			}
 
@@ -46,7 +47,7 @@ func InitWorkerRouter(base *gin.RouterGroup) {
 			left.Name = right.Name
 			left.Address = right.Address
 			left.System = right.System
-			left.Type = right.Type
+			left.IsStatic = right.IsStatic
 			left.Strategy = right.Strategy
 			left.Username = right.Username
 			left.Capacity = right.Capacity
@@ -67,13 +68,13 @@ func InitWorkerRouter(base *gin.RouterGroup) {
 // @ID       many-workers
 // @Tags     workers
 // @Produce  json
-// @Param    page   query int    false "Page number"
-// @Param    size   query int    false "Page size"
-// @Param    order  query string false "Order by field"
-// @Param    name   query string false "Worker name (pattern)"
-// @Param    system query string false "Worker system (pattern)"
-// @Param    status query []int  false "Worker status (possible values)"
-// @Param    type   query []int  false "Worker type (possible values)"
+// @Param    page      query int    false "Page number"
+// @Param    size      query int    false "Page size"
+// @Param    order     query string false "Order by field"
+// @Param    name      query string false "Worker name (pattern)"
+// @Param    system    query string false "Worker system (pattern)"
+// @Param    status    query []int  false "Worker status (possible values)"
+// @Param    is_static query bool   false "Worker type"
 // @Success  200 {object} []model.WorkerShort "List of workers"
 // @Failure  400 {string} Error in request
 // @Failure  500 {string} Database error

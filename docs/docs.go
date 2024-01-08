@@ -2375,13 +2375,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "Worker type (possible values)",
-                        "name": "type",
+                        "type": "boolean",
+                        "description": "Worker type",
+                        "name": "is_static",
                         "in": "query"
                     }
                 ],
@@ -2605,8 +2601,14 @@ const docTemplate = `{
                 "number": {
                     "type": "integer"
                 },
+                "pipeline_name": {
+                    "type": "string"
+                },
+                "project_name": {
+                    "type": "string"
+                },
                 "status": {
-                    "$ref": "#/definitions/model.BuildStatus"
+                    "type": "string"
                 },
                 "steps": {
                     "type": "array",
@@ -2649,7 +2651,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/model.BuildStatus"
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -2659,23 +2661,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.BuildStatus": {
-            "type": "integer",
-            "enum": [
-                0,
-                1,
-                2,
-                3,
-                4
-            ],
-            "x-enum-varnames": [
-                "BuildScheduled",
-                "BuildRunning",
-                "BuildSuccessful",
-                "BuildFailed",
-                "BuildCanceled"
-            ]
-        },
         "model.BuildStep": {
             "type": "object",
             "properties": {
@@ -2683,7 +2668,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "duration": {
-                    "$ref": "#/definitions/time.Duration"
+                    "type": "string"
                 },
                 "logs": {
                     "type": "array",
@@ -2874,29 +2859,29 @@ const docTemplate = `{
         "model.QueueContext": {
             "type": "object",
             "properties": {
+                "branch": {
+                    "type": "string"
+                },
                 "build": {
                     "$ref": "#/definitions/model.Build"
                 },
-                "globalSecrets": {
+                "config": {
+                    "$ref": "#/definitions/model.PipelineConfig"
+                },
+                "repo": {
+                    "type": "string"
+                },
+                "secrets": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.Secret"
                     }
                 },
-                "globalVariables": {
+                "variables": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.Variable"
                     }
-                },
-                "pipeline": {
-                    "$ref": "#/definitions/model.Pipeline"
-                },
-                "project": {
-                    "$ref": "#/definitions/model.Project"
-                },
-                "worker": {
-                    "$ref": "#/definitions/model.Worker"
                 }
             }
         },
@@ -3011,20 +2996,20 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "is_static": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/model.WorkerStatus"
+                    "type": "string"
                 },
                 "strategy": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "system": {
                     "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/model.WorkerType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -3043,6 +3028,9 @@ const docTemplate = `{
                 "capacity": {
                     "type": "integer"
                 },
+                "is_static": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -3050,13 +3038,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "strategy": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "system": {
                     "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/model.WorkerType"
                 },
                 "username": {
                     "type": "string"
@@ -3078,20 +3063,20 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "is_static": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/model.WorkerStatus"
+                    "type": "string"
                 },
                 "strategy": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "system": {
                     "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/model.WorkerType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -3100,30 +3085,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "model.WorkerStatus": {
-            "type": "integer",
-            "enum": [
-                0,
-                1,
-                2
-            ],
-            "x-enum-varnames": [
-                "WorkerIdle",
-                "WorkerUsed",
-                "WorkerUnreachable"
-            ]
-        },
-        "model.WorkerType": {
-            "type": "integer",
-            "enum": [
-                0,
-                1
-            ],
-            "x-enum-varnames": [
-                "WorkerStatic",
-                "WorkerDockerHost"
-            ]
         },
         "sql.NullString": {
             "type": "object",
@@ -3136,21 +3097,6 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
-        },
-        "time.Duration": {
-            "type": "integer",
-            "enum": [
-                1,
-                1000,
-                1000000,
-                1000000000
-            ],
-            "x-enum-varnames": [
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second"
-            ]
         }
     }
 }`

@@ -70,11 +70,3 @@ func (m *Pipeline) BeforeDelete(tx *gorm.DB) error {
 	}
 	return nil
 }
-
-func (m Pipeline) Merge(input PipelineInput) Pipeline {
-	merged := m
-	merged.Name = input.Name
-	merged.Branch = input.Branch
-	merged.Config = input.Config
-	return merged
-}

@@ -1,15 +1,9 @@
 package standalone
 
 import (
-	"errors"
 	"sort"
 
 	"github.com/gg-mike/ccli/pkg/model"
-)
-
-var (
-	ErrNoAvailableWorker                 = errors.New("no worker is available")
-	ErrNoAvailableWorkerForConfiguration = errors.New("no worker is available for given configuration")
 )
 
 func SelectWorker(cfg model.PipelineConfig, workers []model.Worker) (model.Worker, error) {
@@ -30,7 +24,7 @@ func filterWorkers(workers []model.Worker, system, image string) []model.Worker 
 	for _, worker := range workers {
 		if worker.ActiveBuilds < worker.Capacity &&
 			(system == "" || (system != "" && worker.System == system)) &&
-			(image == "" || (image != "" && worker.Type == model.WorkerDockerHost)) {
+			(image == "" || (image != "" && !worker.IsStatic)) {
 			filteredWorkers = append(filteredWorkers, worker)
 		}
 	}

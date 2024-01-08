@@ -5,8 +5,12 @@ definitions:
         type: string
       number:
         type: integer
+      pipeline_name:
+        type: string
+      project_name:
+        type: string
       status:
-        $ref: '#/definitions/model.BuildStatus'
+        type: string
       steps:
         items:
           $ref: '#/definitions/model.BuildStep'
@@ -34,32 +38,18 @@ definitions:
       number:
         type: integer
       status:
-        $ref: '#/definitions/model.BuildStatus'
+        type: string
       updated_at:
         type: string
       worker_name:
         $ref: '#/definitions/sql.NullString'
     type: object
-  model.BuildStatus:
-    enum:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    type: integer
-    x-enum-varnames:
-    - BuildScheduled
-    - BuildRunning
-    - BuildSuccessful
-    - BuildFailed
-    - BuildCanceled
   model.BuildStep:
     properties:
       created_at:
         type: string
       duration:
-        $ref: '#/definitions/time.Duration'
+        type: string
       logs:
         items:
           $ref: '#/definitions/model.BuildLog'
@@ -183,22 +173,22 @@ definitions:
     type: object
   model.QueueContext:
     properties:
+      branch:
+        type: string
       build:
         $ref: '#/definitions/model.Build'
-      globalSecrets:
+      config:
+        $ref: '#/definitions/model.PipelineConfig'
+      repo:
+        type: string
+      secrets:
         items:
           $ref: '#/definitions/model.Secret'
         type: array
-      globalVariables:
+      variables:
         items:
           $ref: '#/definitions/model.Variable'
         type: array
-      pipeline:
-        $ref: '#/definitions/model.Pipeline'
-      project:
-        $ref: '#/definitions/model.Project'
-      worker:
-        $ref: '#/definitions/model.Worker'
     type: object
   model.QueueElem:
     properties:
@@ -272,16 +262,16 @@ definitions:
         type: integer
       created_at:
         type: string
+      is_static:
+        type: boolean
       name:
         type: string
       status:
-        $ref: '#/definitions/model.WorkerStatus'
+        type: string
       strategy:
-        type: integer
+        type: string
       system:
         type: string
-      type:
-        $ref: '#/definitions/model.WorkerType'
       updated_at:
         type: string
       username:
@@ -293,16 +283,16 @@ definitions:
         type: string
       capacity:
         type: integer
+      is_static:
+        type: boolean
       name:
         type: string
       private_key:
         type: string
       strategy:
-        type: integer
+        type: string
       system:
         type: string
-      type:
-        $ref: '#/definitions/model.WorkerType'
       username:
         type: string
     type: object
@@ -316,39 +306,21 @@ definitions:
         type: integer
       created_at:
         type: string
+      is_static:
+        type: boolean
       name:
         type: string
       status:
-        $ref: '#/definitions/model.WorkerStatus'
+        type: string
       strategy:
-        type: integer
+        type: string
       system:
         type: string
-      type:
-        $ref: '#/definitions/model.WorkerType'
       updated_at:
         type: string
       username:
         type: string
     type: object
-  model.WorkerStatus:
-    enum:
-    - 0
-    - 1
-    - 2
-    type: integer
-    x-enum-varnames:
-    - WorkerIdle
-    - WorkerUsed
-    - WorkerUnreachable
-  model.WorkerType:
-    enum:
-    - 0
-    - 1
-    type: integer
-    x-enum-varnames:
-    - WorkerStatic
-    - WorkerDockerHost
   sql.NullString:
     properties:
       string:
@@ -357,18 +329,6 @@ definitions:
         description: Valid is true if String is not NULL
         type: boolean
     type: object
-  time.Duration:
-    enum:
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    type: integer
-    x-enum-varnames:
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
 info:
   contact: {}
 paths:
@@ -1934,13 +1894,10 @@ paths:
           type: integer
         name: status
         type: array
-      - collectionFormat: csv
-        description: Worker type (possible values)
+      - description: Worker type
         in: query
-        items:
-          type: integer
-        name: type
-        type: array
+        name: is_static
+        type: boolean
       produces:
       - application/json
       responses:
