@@ -23,8 +23,8 @@ func filterWorkers(workers []model.Worker, system, image string) []model.Worker 
 	filteredWorkers := []model.Worker{}
 	for _, worker := range workers {
 		if worker.ActiveBuilds < worker.Capacity &&
-			(system == "" || (system != "" && worker.System == system)) &&
-			(image == "" || (image != "" && !worker.IsStatic)) {
+			(system != "" && worker.IsStatic && worker.System == system) ||
+			(image != "" && !worker.IsStatic) {
 			filteredWorkers = append(filteredWorkers, worker)
 		}
 	}

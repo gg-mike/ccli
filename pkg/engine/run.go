@@ -80,6 +80,10 @@ func runStep(ctx *model.QueueContext, _runner *runner.Runner, step model.Pipelin
 
 func onCmd(buildStep *model.BuildStep) func(cmd string, idx, total int) {
 	return func(cmd string, idx, total int) {
+		if buildStep.Name == "Secret exports" {
+			return
+		}
+
 		fmt.Printf("\033[32m[%d/%d] $ %s\033[0m\n", idx+1, total, cmd)
 		buildStep.AppendLog(model.BuildLog{Command: cmd, Idx: idx + 1, Total: total, Output: ""})
 	}

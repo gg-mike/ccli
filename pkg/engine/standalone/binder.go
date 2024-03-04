@@ -38,7 +38,7 @@ func (b Binder) Bind() error {
 
 		for _, elem := range q {
 			var workers []model.Worker
-			if err := tx.Model(&model.Worker{}).Find(&workers, &model.Worker{Status: model.WorkerIdle}).Error; err != nil {
+			if err := tx.Model(&model.Worker{}).Where("status <> 'unreachable'").Find(&workers).Error; err != nil {
 				return err
 			}
 

@@ -45,16 +45,6 @@ type PipelineConfigStep struct {
 	Commands []string `json:"commands"`
 }
 
-func (m *Pipeline) BeforeCreate(tx *gorm.DB) error {
-	// TODO: validate config
-	return nil
-}
-
-func (m *Pipeline) AfterUpdate(tx *gorm.DB) error {
-	// TODO: validate config
-	return nil
-}
-
 func (m *Pipeline) BeforeDelete(tx *gorm.DB) error {
 	if !isForce(tx) {
 		if len(m.Builds) == 0 {

@@ -98,10 +98,11 @@ func newQueueContext(buildID string, start time.Time) (model.QueueContext, error
 	}
 	ctx.Repo = project.Repo
 
-	if !initMultiple(&ctx, &ctx.Secrets, "secrets", "path") {
+	// TODO: project_name and pipeline_name are not initialized
+	if !initMultiple(&ctx, &ctx.Secrets, "secrets", "project_name", "pipeline_name", "path") {
 		return ctx, ErrInvalidSecrets
 	}
-	if !initMultiple(&ctx, &ctx.Variables, "variables", "path", "value") {
+	if !initMultiple(&ctx, &ctx.Variables, "variables", "project_name", "pipeline_name", "path", "value") {
 		return ctx, ErrInvalidVariables
 	}
 

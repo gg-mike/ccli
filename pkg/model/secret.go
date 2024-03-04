@@ -11,9 +11,9 @@ import (
 )
 
 type Secret struct {
-	Key          string         `json:"key"            gorm:"primaryKey"`
-	ProjectName  sql.NullString `json:"-"              gorm:"primaryKey"`
-	PipelineName sql.NullString `json:"-"              gorm:"primaryKey"`
+	Key          string         `json:"key"            gorm:"uniqueIndex:idx_secrets"`
+	ProjectName  sql.NullString `json:"-"              gorm:"uniqueIndex:idx_secrets"`
+	PipelineName sql.NullString `json:"-"              gorm:"uniqueIndex:idx_secrets"`
 	Path         string         `json:"path,omitempty"`
 	CreatedAt    time.Time      `json:"created_at"     gorm:"default:now()"`
 	UpdatedAt    time.Time      `json:"updated_at"     gorm:"default:now()"`

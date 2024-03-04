@@ -84,7 +84,7 @@ func (h Handler[T, TShort, TInput]) Update(selector T, m TInput) error {
 		return err
 	}
 
-	err = db.Get().Model(&selector).InstanceSet("input", m).InstanceSet("prev", prev).Updates(h.merge(prev, m)).Error
+	err = db.Get().Model(&selector).InstanceSet("input", m).InstanceSet("prev", prev).Where(&selector).Updates(h.merge(prev, m)).Error
 	switch err {
 	case nil:
 		return nil
