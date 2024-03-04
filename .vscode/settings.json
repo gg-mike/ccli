@@ -21,8 +21,13 @@
   "peacock.remoteColor": "#dd0531",
   "cSpell.words": [
     "ccli",
+    "clientset",
+    "corev",
     "gorm",
+    "kubeconfig",
+    "metav",
     "msgf",
+    "remotecommand",
     "workdir",
     "zerolog"
   ]
