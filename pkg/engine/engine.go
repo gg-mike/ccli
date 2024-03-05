@@ -69,21 +69,21 @@ func (e *Engine) Run() {
 	for run {
 		select {
 		case buildID := <-e.newBuild:
-			e.eventLog(EventSchedule, EventProcessed, buildID)
+			e.logger.Debug().Str("event", EventSchedule.String()).Str("status", EventProcessed.String()).Str("build_id", buildID).Send()
 
 			e.schedule(buildID)
 
-			e.eventLog(EventSchedule, EventComplete, buildID)
+			e.logger.Debug().Str("event", EventSchedule.String()).Str("status", EventComplete.String()).Str("build_id", buildID).Send()
 		case buildID := <-e.finishedBuild:
-			e.eventLog(EventFinished, EventProcessed, buildID)
+			e.logger.Debug().Str("event", EventFinished.String()).Str("status", EventProcessed.String()).Str("build_id", buildID).Send()
 
 			if err := e.finished(buildID); err != nil {
-				e.eventErr(EventFinished, EventComplete, err, buildID)
+				e.logger.Error().Str("event", EventFinished.String()).Str("status", EventComplete.String()).Str("build_id", buildID).Err(err).Send()
 			} else {
-				e.eventLog(EventFinished, EventComplete, buildID)
+				e.logger.Debug().Str("event", EventFinished.String()).Str("status", EventComplete.String()).Str("build_id", buildID).Send()
 			}
 		case ctx := <-e.addToQueue:
-			e.eventLog(EventAddToQueue, EventProcessed, ctx.Build.ID())
+			e.logger.Debug().Str("event", EventAddToQueue.String()).Str("status", EventProcessed.String()).Str("build_id", ctx.Build.ID()).Send()
 
 			ctx.Build.Steps = append(ctx.Build.Steps, model.BuildStep{
 				Name:         "Worker binding",
@@ -95,28 +95,30 @@ func (e *Engine) Run() {
 			})
 
 			if err := db.Get().Create(&model.QueueElem{ID: ctx.Build.ID(), Context: ctx}).Error; err != nil {
-				e.eventErr(EventAddToQueue, EventFailed, err, ctx.Build.ID())
+				e.logger.Error().Str("event", EventAddToQueue.String()).Str("status", EventFailed.String()).Str("build_id", ctx.Build.ID()).Err(err).Send()
 				continue
 			}
 
 			if err := e.binder.Bind(); err != nil {
-				e.eventErr(EventAddToQueue, EventFailed, err, ctx.Build.ID())
+				e.logger.Error().Str("event", EventAddToQueue.String()).Str("status", EventFailed.String()).Str("build_id", ctx.Build.ID()).Err(err).Send()
 			}
 
-			e.eventLog(EventAddToQueue, EventComplete, ctx.Build.ID())
+			e.logger.Debug().Str("event", EventAddToQueue.String()).Str("status", EventComplete.String()).Str("build_id", ctx.Build.ID()).Send()
 		case <-e.changeInWorkers:
-			e.eventLog(EventChangeInWorkers, EventProcessed)
+			e.logger.Debug().Str("event", EventChangeInWorkers.String()).Str("status", EventProcessed.String()).Send()
 
 			if err := e.binder.Bind(); err != nil {
-				e.eventErr(EventChangeInWorkers, EventFailed, err)
+				e.logger.Error().Str("event", EventChangeInWorkers.String()).Str("status", EventFailed.String()).Err(err).Send()
 			} else {
-				e.eventLog(EventChangeInWorkers, EventComplete)
+				e.logger.Debug().Str("event", EventChangeInWorkers.String()).Str("status", EventComplete.String()).Send()
 			}
 		case <-e.shutdown:
-			e.eventLog(EventShutdown, EventProcessed)
+			e.logger.Debug().Str("event", EventShutdown.String()).Str("status", EventProcessed.String()).Send()
+
 			run = false
 			e.done <- true
-			e.eventLog(EventShutdown, EventComplete)
+
+			e.logger.Debug().Str("event", EventShutdown.String()).Str("status", EventComplete.String()).Send()
 		}
 	}
 
@@ -124,46 +126,29 @@ func (e *Engine) Run() {
 }
 
 func (e *Engine) Schedule(buildID string) {
-	e.eventLog(EventSchedule, EventReceived, buildID)
+	e.logger.Debug().Str("event", EventSchedule.String()).Str("status", EventReceived.String()).Str("build_id", buildID).Send()
 	e.newBuild <- buildID
 }
 
 func (e *Engine) Finished(buildID string) {
-	e.eventLog(EventFinished, EventReceived, buildID)
+	e.logger.Debug().Str("event", EventFinished.String()).Str("status", EventReceived.String()).Str("build_id", buildID).Send()
 	e.finishedBuild <- buildID
 }
 
 func (e *Engine) AddToQueue(ctx model.QueueContext) {
-	e.eventLog(EventAddToQueue, EventReceived, ctx.Build.ID())
+	e.logger.Debug().Str("event", EventAddToQueue.String()).Str("status", EventReceived.String()).Str("build_id", ctx.Build.ID()).Send()
 	e.addToQueue <- ctx
 }
 
 func (e *Engine) ChangeInWorkers() {
-	e.eventLog(EventChangeInWorkers, EventReceived)
+	e.logger.Debug().Str("event", EventChangeInWorkers.String()).Str("status", EventReceived.String()).Send()
 	e.changeInWorkers <- true
 }
 
 func (e *Engine) Shutdown() chan any {
-	e.eventLog(EventShutdown, EventReceived)
+	e.logger.Debug().Str("event", EventShutdown.String()).Str("status", EventReceived.String()).Send()
 	go func() { e.shutdown <- true }()
 	return e.done
-}
-
-func (e Engine) eventLog(event EngineEvent, status EngineEventStatus, buildID ...string) {
-	if len(buildID) > 0 {
-		e.logger.Debug().Str("event", event.String()).Str("status", status.String()).Str("build_id", buildID[0]).Send()
-	} else {
-		e.logger.Debug().Str("event", event.String()).Str("status", status.String()).Send()
-	}
-
-}
-
-func (e Engine) eventErr(event EngineEvent, status EngineEventStatus, err error, buildID ...string) {
-	if len(buildID) > 0 {
-		e.logger.Error().Str("event", event.String()).Str("status", status.String()).Str("build_id", buildID[0]).Err(err).Send()
-	} else {
-		e.logger.Error().Str("event", event.String()).Str("status", status.String()).Err(err).Send()
-	}
 }
 
 func (e EngineEvent) String() string {
