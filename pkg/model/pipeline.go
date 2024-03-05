@@ -36,6 +36,7 @@ type PipelineInput struct {
 type PipelineConfig struct {
 	System  string               `json:"system"`
 	Image   string               `json:"image"`
+	Shell   string               `json:"shell"`
 	Steps   []PipelineConfigStep `json:"steps"`
 	Cleanup []string             `json:"cleanup"`
 }

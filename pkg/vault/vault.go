@@ -8,6 +8,11 @@ import (
 	"github.com/hashicorp/vault-client-go/schema"
 )
 
+type Config struct {
+	Url   string
+	Token string
+}
+
 var client *vault.Client
 
 func Get() *vault.Client {
@@ -17,21 +22,21 @@ func Get() *vault.Client {
 	return client
 }
 
-func Init(address, token string) error {
+func Init(config Config) error {
 	if client != nil {
 		panic("vault client is already initialized")
 	}
 
 	var err error
 	client, err = vault.New(
-		vault.WithAddress(address),
+		vault.WithAddress(config.Url),
 		vault.WithRequestTimeout(10*time.Second),
 	)
 	if err != nil {
 		return err
 	}
 
-	if err = client.SetToken(token); err != nil {
+	if err = client.SetToken(config.Token); err != nil {
 		return err
 	}
 	return nil

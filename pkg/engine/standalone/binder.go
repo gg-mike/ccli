@@ -5,6 +5,7 @@ import (
 
 	"github.com/gg-mike/ccli/pkg/db"
 	"github.com/gg-mike/ccli/pkg/docker"
+	"github.com/gg-mike/ccli/pkg/engine/common"
 	"github.com/gg-mike/ccli/pkg/log"
 	"github.com/gg-mike/ccli/pkg/model"
 	"github.com/gg-mike/ccli/pkg/runner"
@@ -64,7 +65,7 @@ func (b Binder) Bind() error {
 			elem.Context.Build.End()
 
 			if db.Get().UpdateColumns(elem.Context.Build).Error != nil {
-				return ErrUpdatingBuild
+				return common.ErrUpdatingBuild
 			}
 
 			_runner, err := getRunner(worker.IsStatic)(&elem, worker)

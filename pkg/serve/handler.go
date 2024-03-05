@@ -13,6 +13,7 @@ import (
 	"github.com/gg-mike/ccli/pkg/db"
 	"github.com/gg-mike/ccli/pkg/docker"
 	"github.com/gg-mike/ccli/pkg/engine"
+	"github.com/gg-mike/ccli/pkg/engine/k8s"
 	"github.com/gg-mike/ccli/pkg/engine/standalone"
 	"github.com/gg-mike/ccli/pkg/log"
 	"github.com/gg-mike/ccli/pkg/scheduler"
@@ -23,11 +24,11 @@ import (
 )
 
 type Flags struct {
-	Address    string
-	DbUrl      string
-	VaultUrl   string
-	VaultToken string
-	Scheduler  string
+	Address   string
+	DbUrl     string
+	Vault     vault.Config
+	Scheduler string
+	K8s       k8s.Config
 }
 
 type Handler struct {
@@ -46,9 +47,13 @@ func NewHandler(logger log.Logger, f *Flags) *Handler {
 	}
 
 	if h.flags.Scheduler == "standalone" {
-		h.engine = engine.NewEngine(logger, &standalone.Binder{})
+		h.engine = engine.NewEngine(logger, standalone.NewBinder(logger))
 	} else {
-		panic("not implemented")
+		binder, err := k8s.NewBinder(logger, h.flags.K8s)
+		if err != nil {
+			h.logger.Fatal().Err(err).Msg("could not bind to Kubernetes cluster")
+		}
+		h.engine = engine.NewEngine(logger, binder)
 	}
 
 	h.state.Healthy()
@@ -134,7 +139,7 @@ func (h *Handler) initServer() {
 }
 
 func (h *Handler) initVault() {
-	if err := vault.Init(h.flags.VaultUrl, h.flags.VaultToken); err != nil {
+	if err := vault.Init(h.flags.Vault); err != nil {
 		h.logger.Fatal().Err(err).Msg("error while connecting to the vault")
 	}
 	h.logger.Info().Msg("successfully connected to the vault")
