@@ -17,7 +17,7 @@ func newClient(host string) (*Client, error) {
 		client.WithAPIVersionNegotiation(),
 	)
 	if err != nil {
-		return &Client{}, nil
+		return &Client{}, err
 	}
 	return &Client{
 		host:   host,
