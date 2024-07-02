@@ -63,7 +63,7 @@ func (b Binder) Bind() error {
 
 		for _, elem := range q {
 			podName := strings.ReplaceAll(elem.ID, "/", "-")
-			_runner, err := b.client.NewRunner(b.namespace, podName, elem.Context.Config.Image, elem.Context.Config.Shell)
+			_runner, err := b.client.NewRunner(b.namespace, podName, elem.Context.Config)
 			if err != nil {
 				if err := db.Get().Model(&elem.Context.Build).UpdateColumn("status", model.BuildFailed).Error; err != nil {
 					return err

@@ -11,8 +11,8 @@ import (
 
 type Variable struct {
 	Key          string         `json:"key"            gorm:"uniqueIndex:idx_variables"`
-	ProjectName  sql.NullString `json:"-"              gorm:"uniqueIndex:idx_variables"`
-	PipelineName sql.NullString `json:"-"              gorm:"uniqueIndex:idx_variables"`
+	ProjectName  sql.NullString `json:"project_name"   gorm:"uniqueIndex:idx_variables"`
+	PipelineName sql.NullString `json:"pipeline_name"  gorm:"uniqueIndex:idx_variables"`
 	Value        string         `json:"value"          gorm:"not null"`
 	Path         string         `json:"path,omitempty"`
 	CreatedAt    time.Time      `json:"created_at"     gorm:"default:now();not null"`

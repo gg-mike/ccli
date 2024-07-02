@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gg-mike/ccli/pkg/model"
 	"github.com/gg-mike/ccli/pkg/runner"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +14,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-func (client Client) createPod(namespace, name, imageName string) error {
+func (client Client) createPod(namespace, name string, config model.PipelineConfig) error {
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -22,9 +23,12 @@ func (client Client) createPod(namespace, name, imageName string) error {
 			Containers: []corev1.Container{
 				{
 					Name:  "worker",
-					Image: imageName,
+					Image: config.Image,
 					Stdin: true,
 					TTY:   true,
+					SecurityContext: &corev1.SecurityContext{
+						Privileged: &config.Privileged,
+					},
 				},
 			},
 		},
@@ -51,8 +55,8 @@ func (client Client) createPod(namespace, name, imageName string) error {
 	return nil
 }
 
-func (client Client) NewRunner(namespace, name, imageName, shell string) (*runner.Runner, error) {
-	if err := client.createPod(namespace, name, imageName); err != nil {
+func (client Client) NewRunner(namespace, name string, config model.PipelineConfig) (*runner.Runner, error) {
+	if err := client.createPod(namespace, name, config); err != nil {
 		return &runner.Runner{}, err
 	}
 
@@ -77,7 +81,7 @@ func (client Client) NewRunner(namespace, name, imageName, shell string) (*runne
 		Param("stdout", "true").
 		Param("stderr", "false").
 		Param("tty", "false").
-		Param("command", shell)
+		Param("command", config.Shell)
 
 	exec, err := remotecommand.NewSPDYExecutor(client.config, "POST", req.URL())
 	if err != nil {

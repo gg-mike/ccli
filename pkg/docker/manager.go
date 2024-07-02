@@ -50,7 +50,7 @@ func DeleteClient(host string) error {
 	return nil
 }
 
-func NewRunner(host, imageName string) (*runner.Runner, error) {
+func NewRunner(host, imageName string, privileged bool) (*runner.Runner, error) {
 	conn, ok := Get().clients[host]
 	if !ok {
 		var err error
@@ -60,7 +60,7 @@ func NewRunner(host, imageName string) (*runner.Runner, error) {
 		}
 		Get().clients[host] = conn
 	}
-	_runner, err := newRunner(conn.client, imageName)
+	_runner, err := newRunner(conn.client, imageName, privileged)
 	if err != nil {
 		return &runner.Runner{}, err
 	}

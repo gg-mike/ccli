@@ -10,7 +10,7 @@ import (
 	"github.com/gg-mike/ccli/pkg/runner"
 )
 
-func newRunner(cli *client.Client, imageName string) (*runner.Runner, error) {
+func newRunner(cli *client.Client, imageName string, privileged bool) (*runner.Runner, error) {
 	out, err := cli.ImagePull(context.Background(), imageName, types.ImagePullOptions{})
 	if err != nil {
 		return &runner.Runner{}, err
@@ -34,6 +34,7 @@ func newRunner(cli *client.Client, imageName string) (*runner.Runner, error) {
 	},
 		&container.HostConfig{
 			AutoRemove: true,
+			Privileged: privileged,
 		}, nil, nil, "")
 	if err != nil {
 		return &runner.Runner{}, err

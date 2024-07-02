@@ -24,7 +24,7 @@ type Build struct {
 	Number       uint           `json:"number"          gorm:"primaryKey;uniqueIndex:idx_builds"`
 	PipelineName string         `json:"pipeline_name"   gorm:"primaryKey;uniqueIndex:idx_builds"`
 	ProjectName  string         `json:"project_name"    gorm:"primaryKey;uniqueIndex:idx_builds"`
-	Status       string         `json:"status"          gorm:"default:0"`
+	Status       string         `json:"status"          gorm:"default:scheduled"`
 	Steps        []BuildStep    `json:"steps,omitempty" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:BuildNumber,PipelineName,ProjectName"`
 	WorkerName   sql.NullString `json:"worker_name"`
 	CreatedAt    time.Time      `json:"created_at"      gorm:"default:now()"`

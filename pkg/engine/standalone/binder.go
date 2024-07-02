@@ -125,6 +125,6 @@ func getRunner(isStatic bool) func(*model.QueueElem, model.Worker) (*runner.Runn
 		}
 	}
 	return func(qe *model.QueueElem, w model.Worker) (*runner.Runner, error) {
-		return docker.NewRunner(w.Address, qe.Context.Config.Image)
+		return docker.NewRunner(w.Address, qe.Context.Config.Image, qe.Context.Config.Privileged)
 	}
 }
